@@ -22,7 +22,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [volumes, setVolumes] = useState({});
   const [lesions, setLesions] = useState([]);
-  const [dims, setDims] = useState([0, 0, 0]);
+  const [dims, setDims] = useState([256, 256, 256]);
   const [pixDims, setPixDims] = useState([1, 1, 1]); // new state for voxel dimensions
 
   // State

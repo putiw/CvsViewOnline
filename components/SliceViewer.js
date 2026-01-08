@@ -14,7 +14,7 @@ export default function SliceViewer({
         if (!canvas || !volumes[modality]) return;
 
         const ctx = canvas.getContext('2d');
-        const [dimX, dimY, dimZ] = dims;
+        const [dimX, dimY, dimZ] = (dims && dims.length >= 3) ? dims : [1, 1, 1];
         const [pixX, pixY, pixZ] = (typeof pixDims !== 'undefined' && pixDims && pixDims.length >= 3) ? pixDims : [1, 1, 1];
         const { x, y, z } = coords;
 
