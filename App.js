@@ -163,6 +163,29 @@ export default function App() {
         lesion: analysis.labeledMask // Use the LABELED mask!
       });
 
+      // Restore Contrast Settings
+      // 1. Slider Limits (Wide range: 0.01% - 99.99%)
+      const getLimits = (data) => calculateContrastPercentiles(data, 0.01, 99.99);
+      const limFlairStar = getLimits(normFlairStar);
+      const limSwi = vSwi ? getLimits(normSwi) : { min: -5, max: 10 };
+      const limFlair = vFlair ? getLimits(normFlair) : { min: -5, max: 10 };
+      const limPhase = vPhase ? getLimits(vPhase.data) : { min: -1000, max: 1000 };
+
+      setContrastLimits({
+        flairStar: limFlairStar,
+        swi: limSwi,
+        flair: limFlair,
+        phase: limPhase
+      });
+
+      // 2. Default View Settings (Optimized range: 2.0% - 99.5% calculated above)
+      setContrastSettings({
+        flairStar: flairStarPerc,
+        swi: swiPerc,
+        flair: flairPerc,
+        phase: { min: -500, max: 500 }
+      });
+
       // Set initial state
       if (analysis.lesions.length > 0) {
         const first = analysis.lesions[0];
