@@ -267,31 +267,29 @@ export default function App() {
           body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #121212; color: #e0e0e0; font-size: 18px; }
           h1 { color: #60a5fa; border-bottom: 2px solid #333; padding-bottom: 20px; font-size: 32px; margin-bottom: 40px; }
           h2 { color: #93c5fd; margin-top: 50px; font-size: 26px; border-bottom: 1px solid #333; padding-bottom: 10px; }
-          .stats { background: #1e1e1e; padding: 30px; border-radius: 12px; border: 1px solid #333; font-size: 20px; margin-bottom: 40px; }
-          .stats p { margin: 12px 0; }
-          .lesion { margin-bottom: 60px; background: #000; padding: 30px; border-radius: 16px; border: 1px solid #333; page-break-inside: avoid; }
-          .lesion-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 25px; }
-          .lesion-title { font-size: 1.6em; font-weight: bold; color: #60a5fa; }
-          .lesion-meta { color: #aaa; font-size: 1.2em; }
+          /* Stats: Make them HUGE as requested */
+          .stats { background: #1e1e1e; padding: 30px; border-radius: 12px; border: 1px solid #333; font-size: 24px; margin-bottom: 40px; }
+          .stats p { margin: 15px 0; line-height: 1.4; }
+          .stats h2 { margin-top: 0; font-size: 32px; border-bottom: 1px solid #444; padding-bottom: 15px; margin-bottom: 20px; color: #fff; }
+
+          /* Axis-based Grid Layout */
+          .axis-container { display: flex; justify-content: center; gap: 30px; margin-bottom: 40px; }
+          .axis-column { display: flex; flex-direction: column; gap: 20px; align-items: center; width: 30%; }
+          .axis-title { font-size: 22px; color: #93c5fd; font-weight: bold; margin-bottom: 10px; text-align: center; }
           
-          /* Flex Layout to remove blank space between images */
-          .image-grid { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; flex-wrap: wrap; }
-          .image-col { display: flex; flex-direction: column; gap: 10px; align-items: center; }
-          .image-label { text-align: center; font-size: 1.1em; color: #ccc; background: #222; padding: 8px 16px; border-radius: 6px; width: 100%; box-sizing: border-box; }
+          .img-wrapper { width: 100%; display: flex; flex-direction: column; align-items: center; background: #000; border: 1px solid #333; padding: 10px; border-radius: 8px; }
+          .img-label { color: #aaa; margin-bottom: 8px; font-size: 16px; }
           
-          /* Larger Images to fill the screen */
           img { 
             display: block;
             max-width: 100%;
-            height: 450px; /* Much larger height */
             object-fit: contain; 
-            background: #050505; 
-            border: 1px solid #444; 
+            background: #000; 
           }
           
-          /* Specific styling for Zoomed vs Full if needed, but height constraint works well for both */
-          .zoom-row img { height: 350px; } /* Square zooms can be slightly smaller to save vertical space */
-          .full-row img { height: 500px; } /* Full views get maximum height */
+          /* Specific heights */
+          .zoom-img { height: 350px; width: 350px; } /* Square-ish Zoom */
+          .full-img { height: 500px; width: auto; } /* Tall Full View */
 
         </style>
       </head>
@@ -299,13 +297,32 @@ export default function App() {
         <h1>CvsView Session Report</h1>
         <div class="stats">
           <h2>Session Statistics</h2>
-          <p><strong>Total Lesions:</strong> ${lesions.length}</p>
-          <p><strong>Total Volume:</strong> ${totalVolume.toFixed(2)} ml</p>
-          <p><strong>CVS+ Lesions:</strong> ${validLesionsCount}</p>
-          <p><strong>PRL+ Lesions:</strong> ${prlLesionsCount}</p>
+          <p><strong>Total Lesions:</strong> <span style="color: #60a5fa">${lesions.length}</span></p>
+          <p><strong>Total Volume:</strong> <span style="color: #60a5fa">${totalVolume.toFixed(2)} ml</span></p>
+          <p><strong>CVS+ Lesions:</strong> <span style="color: #60a5fa">${validLesionsCount}</span></p>
+          <p><strong>PRL+ Lesions:</strong> <span style="color: #60a5fa">${prlLesionsCount}</span></p>
         </div>
         <h2>Lesion Details</h2>
     `;
+
+    // ... (Loop logic remains) ...
+
+    // Inside loop:
+    /* 
+       New Structure:
+       <div class="lesion">
+         <Header>
+         <div class="axis-container">
+           <div class="axis-column">
+              <div class="axis-title">Sagittal</div>
+              <div class="img-wrapper"><span class="img-label">Zoom</span> <img class="zoom-img" src="..."></div>
+              <div class="img-wrapper"><span class="img-label">Full</span> <img class="full-img" src="..."></div>
+           </div>
+           ... Coronal ... Axial ...
+         </div>
+       </div>
+    */
+
 
     // Identify lesions of interest (CVS+ > 0.5 OR PRL+)
     const interestIndices = lesions.map((l, i) => {
@@ -374,36 +391,45 @@ export default function App() {
                 </div>
               </div>
               
-              <!-- Zoomed Row -->
-              <div class="image-grid zoom-row">
-                 <div class="image-col">
-                   <div class="image-label">Sagittal (Zoom)</div>
-                   <img src="${imgSagZ}" />
-                 </div>
-                 <div class="image-col">
-                   <div class="image-label">Coronal (Zoom)</div>
-                   <img src="${imgCorZ}" />
-                 </div>
-                 <div class="image-col">
-                   <div class="image-label">Axial (Zoom)</div>
-                   <img src="${imgAxZ}" />
-                 </div>
-              </div>
-              
-              <!-- Full Row -->
-              <div class="image-grid full-row">
-                 <div class="image-col">
-                   <div class="image-label">Sagittal (Full)</div>
-                   <img src="${imgSag}" />
-                 </div>
-                 <div class="image-col">
-                   <div class="image-label">Coronal (Full)</div>
-                   <img src="${imgCor}" />
-                 </div>
-                 <div class="image-col">
-                   <div class="image-label">Axial (Full)</div>
-                   <img src="${imgAx}" />
-                 </div>
+              <div class="axis-container">
+                <!-- Sagittal Column -->
+                <div class="axis-column">
+                  <div class="axis-title">Sagittal</div>
+                  <div class="img-wrapper">
+                    <div class="img-label">Zoom</div>
+                    <img class="zoom-img" src="${imgSagZ}" />
+                  </div>
+                  <div class="img-wrapper">
+                    <div class="img-label">Full Context</div>
+                    <img class="full-img" src="${imgSag}" />
+                  </div>
+                </div>
+
+                <!-- Coronal Column -->
+                <div class="axis-column">
+                  <div class="axis-title">Coronal</div>
+                  <div class="img-wrapper">
+                    <div class="img-label">Zoom</div>
+                    <img class="zoom-img" src="${imgCorZ}" />
+                  </div>
+                  <div class="img-wrapper">
+                    <div class="img-label">Full Context</div>
+                    <img class="full-img" src="${imgCor}" />
+                  </div>
+                </div>
+
+                <!-- Axial Column -->
+                <div class="axis-column">
+                  <div class="axis-title">Axial</div>
+                  <div class="img-wrapper">
+                    <div class="img-label">Zoom</div>
+                    <img class="zoom-img" src="${imgAxZ}" />
+                  </div>
+                  <div class="img-wrapper">
+                    <div class="img-label">Full Context</div>
+                    <img class="full-img" src="${imgAx}" />
+                  </div>
+                </div>
               </div>
               
             </div>
