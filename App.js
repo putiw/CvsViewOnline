@@ -469,17 +469,17 @@ export default function App() {
         <View className="flex-1 flex-col p-2 gap-2">
           {/* Top Row: Zoomed Views */}
           <View className="flex-1 flex-row gap-2">
-            <SliceViewer label="Sagittal (Zoom)" axis="x" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesionIndex + 1} />
-            <SliceViewer label="Coronal (Zoom)" axis="y" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesionIndex + 1} />
-            <SliceViewer label="Axial (Zoom)" axis="z" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesionIndex + 1} />
+            <SliceViewer label="Sagittal (Zoom)" axis="x" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
+            <SliceViewer label="Coronal (Zoom)" axis="y" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
+            <SliceViewer label="Axial (Zoom)" axis="z" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
           </View>
 
           {/* Bottom Row: Full Views (Less Zoom) */}
           <View className="flex-1 flex-row gap-2">
             <View className="flex-1 flex-row gap-2">
-              <SliceViewer label="Sagittal" axis="x" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={setCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesionIndex + 1} />
-              <SliceViewer label="Coronal" axis="y" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={setCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesionIndex + 1} />
-              <SliceViewer label="Axial" axis="z" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={setCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesionIndex + 1} />
+              <SliceViewer label="Sagittal" axis="x" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={setCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
+              <SliceViewer label="Coronal" axis="y" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={setCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
+              <SliceViewer label="Axial" axis="z" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={setCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
             </View>
           </View>
         </View>
