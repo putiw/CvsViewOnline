@@ -27,6 +27,20 @@ export const loadNifti = (arrayBuffer) => {
             typedData = new Int16Array(image); // Most MRI is int16. 
         }
 
+        // Apply Scaling (Slope/Intercept) if present
+        // NIfTI spec: if scl_slope is 0, it means 1 (no scaling).
+        const slope = header.scl_slope;
+        const intercept = header.scl_inter;
+
+        if (slope && slope !== 0) {
+            // We must convert to Float32 to hold scaled values
+            const scaledData = new Float32Array(typedData.length);
+            for (let i = 0; i < typedData.length; i++) {
+                scaledData[i] = typedData[i] * slope + intercept;
+            }
+            typedData = scaledData;
+        }
+
         // Scale to proper values if needed (ignoring scaling for now for raw visualization speed, 
         // but might be needed for quantitative values)
         // nifti-reader-js provides raw typed array.

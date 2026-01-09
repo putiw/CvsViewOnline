@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 
 export default function SliceViewer({
-    label, axis, volumes, dims, pixDims, coords, zoom, windowMin, windowMax, modality, onClick, interactive, showMask, cursor = 'crosshair', fovZoom, boxZoom
+    label, axis, volumes, dims, pixDims, coords, zoom, windowMin, windowMax, modality, onClick, interactive, showMask, cursor = 'crosshair', fovZoom, boxZoom, currentLesionLabel
 }) {
     const canvasRef = useRef(null);
 
@@ -146,9 +146,14 @@ export default function SliceViewer({
                     }
 
                     if (isEdge) {
+                        // Check if this pixel belongs to the current lesion
+                        const lesionLabel = Math.round(lesionData[idx]);
+                        const isCurrentLesion = currentLesionLabel && lesionLabel === currentLesionLabel;
+
+                        // Green for current lesion, Blue for others
                         data[pxIdx] = 0;
-                        data[pxIdx + 1] = 255;
-                        data[pxIdx + 2] = 0;
+                        data[pxIdx + 1] = isCurrentLesion ? 255 : 0;
+                        data[pxIdx + 2] = isCurrentLesion ? 0 : 255;
                         data[pxIdx + 3] = 255;
                     }
                 }

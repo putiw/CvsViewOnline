@@ -87,8 +87,8 @@ export default function App() {
         case 'x': setShowMask(prev => !prev); break;
         case 'ArrowLeft': handlePrevLesion(); break;
         case 'ArrowRight': handleNextLesion(); break;
-        case 'ArrowUp': setZoom(z => Math.min(10, z + 0.25)); break;
-        case 'ArrowDown': setZoom(z => Math.max(0.5, z - 0.25)); break;
+        case 'ArrowUp': setZoom(z => Math.min(10, z + 0.1)); break;
+        case 'ArrowDown': setZoom(z => Math.max(0.2, z - 0.1)); break;
       }
     };
 
@@ -506,17 +506,17 @@ export default function App() {
         <View className="flex-1 flex-col p-2 gap-2">
           {/* Top Row: Zoomed Views */}
           <View className="flex-1 flex-row gap-2">
-            <SliceViewer label="Sagittal (Zoom)" axis="x" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} />
-            <SliceViewer label="Coronal (Zoom)" axis="y" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} />
-            <SliceViewer label="Axial (Zoom)" axis="z" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} />
+            <SliceViewer label="Sagittal (Zoom)" axis="x" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesionIndex + 1} />
+            <SliceViewer label="Coronal (Zoom)" axis="y" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesionIndex + 1} />
+            <SliceViewer label="Axial (Zoom)" axis="z" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesionIndex + 1} />
           </View>
 
           {/* Bottom Row: Full Views (Less Zoom) */}
           <View className="flex-1 flex-row gap-2">
             <View className="flex-1 flex-row gap-2">
-              <SliceViewer label="Sagittal" axis="x" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={setCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} />
-              <SliceViewer label="Coronal" axis="y" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={setCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} />
-              <SliceViewer label="Axial" axis="z" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={setCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} />
+              <SliceViewer label="Sagittal" axis="x" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={setCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesionIndex + 1} />
+              <SliceViewer label="Coronal" axis="y" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={setCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesionIndex + 1} />
+              <SliceViewer label="Axial" axis="z" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={setCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesionIndex + 1} />
             </View>
           </View>
         </View>
