@@ -137,9 +137,11 @@ export default function App() {
       // Calculate percentiles
       // FlairStar etc: 1% to 99.9% of NORMALIZED data
       const t1 = performance.now();
-      const flairStarPerc = calculateContrastPercentiles(normFlairStar, 0.01, 0.999);
-      const swiPerc = vSwi ? calculateContrastPercentiles(normSwi, 0.01, 0.999) : { min: -1.5, max: 1.96 };
-      const flairPerc = vFlair ? calculateContrastPercentiles(normFlair, 0.01, 0.999) : { min: -1.5, max: 1.96 };
+      // Calculate Default Contrast Ranges (Visual Defaults)
+      // Tighter range (2% - 99.5%) to avoid outliers making the image look gray/flat
+      const flairStarPerc = calculateContrastPercentiles(normFlairStar, 2.0, 99.5);
+      const swiPerc = vSwi ? calculateContrastPercentiles(normSwi, 2.0, 99.5) : { min: -1.5, max: 1.96 };
+      const flairPerc = vFlair ? calculateContrastPercentiles(normFlair, 2.0, 99.5) : { min: -1.5, max: 1.96 };
       // Phase: No percentiles needed? User said -500 to 500. 
       // But we can calculate just in case, or skip. Skip to save time.
 
@@ -288,7 +290,7 @@ export default function App() {
           }
           
           /* Specific heights */
-          .zoom-img { height: 350px; width: 350px; } /* Square-ish Zoom */
+          .zoom-img { height: 250px; width: 250px; } /* Smaller Zoom (approx 70-80% of previous) */
           .full-img { height: 500px; width: auto; } /* Tall Full View */
 
         </style>
