@@ -116,20 +116,18 @@ export default function App() {
         setPixDims(vFlairStar.header.pixDims.slice(1, 4));
       }
 
-      // Normalize images (Z-score)
-      const t0 = performance.now();
-      const volFlairStar = zNormalize(vFlairStar.data);
-      const volSwi = vSwi ? zNormalize(vSwi.data) : null;
-      const volFlair = vFlair ? zNormalize(vFlair.data) : null;
-      const volPhase = vPhase ? zNormalize(vPhase.data) : null;
-      console.log(`Normalization took ${(performance.now() - t0).toFixed(0)}ms`);
+      // 3. Process Volumes (No Z-Score, keeping raw values for flexible contrast)
+      // vFlairStar
+      // vPhase
+      // vSwi
+      // vFlair
 
       // Calculate percentiles for automatic contrast
       const t1 = performance.now();
-      const flairStarPerc = calculateContrastPercentiles(volFlairStar);
-      const swiPerc = volSwi ? calculateContrastPercentiles(volSwi) : { min: -1.5, max: 1.96 };
-      const flairPerc = volFlair ? calculateContrastPercentiles(volFlair) : { min: -1.5, max: 1.96 };
-      const phasePerc = volPhase ? calculateContrastPercentiles(volPhase) : { min: -1.5, max: 1.96 };
+      const flairStarPerc = calculateContrastPercentiles(vFlairStar.data, 0.01, 0.9999);
+      const swiPerc = vSwi ? calculateContrastPercentiles(vSwi.data, 0.01, 0.9999) : { min: -1.5, max: 1.96 };
+      const flairPerc = vFlair ? calculateContrastPercentiles(vFlair.data, 0.01, 0.9999) : { min: -1.5, max: 1.96 };
+      const phasePerc = vPhase ? calculateContrastPercentiles(vPhase.data, 0.01, 0.9999) : { min: -1.5, max: 1.96 };
       console.log(`Percentile calculation took ${(performance.now() - t1).toFixed(0)}ms`);
 
       // Set contrast defaults
@@ -141,15 +139,14 @@ export default function App() {
       });
 
       // Store volumes
-      const newVolumes = {
-        flairStar: volFlairStar,
-        swi: volSwi,
-        flair: volFlair,
-        phase: volPhase,
-        lesion: vLesion.data
-      };
+      setVolumes({
+        flairStar: vFlairStar.img,
+        phase: vPhase.img,
+        swi: vSwi.img,
+        flair: vFlair.img,
+        lesion: vLesion.img
+      });
 
-      setVolumes(newVolumes);
       setDims(vFlairStar.dims);
       setPixDims(vFlairStar.pixDims); // Save pixDims
 
@@ -272,27 +269,80 @@ export default function App() {
       });
     };
 
-    for (let i = 0; i < cvsLesions.length; i++) {
-      const lesionIdx = lesions.indexOf(cvsLesions[i]);
+    // Identify lesions of interest (CVS+ > 0.5 OR PRL+)
+    const interestIndices = lesions.map((l, i) => {
+      const isCvs = (lesionScores[i] || 0) > 0.5;
+      const isPrl = !!lesionPRL[i];
+      if (isCvs || isPrl) return i;
+      return -1;
+    }).filter(i => i !== -1);
+
+    for (let i = 0; i < interestIndices.length; i++) {
+      const lesionIdx = interestIndices[i];
       const l = lesions[lesionIdx];
+      const isCvs = (lesionScores[lesionIdx] || 0) > 0.5;
+      const isPrl = !!lesionPRL[lesionIdx];
 
-      // No need to navigate UI or wait! Headless renders from state.
+      // Determine Modality & Contrast
+      let targetModality = 'flairStar';
+      let tMin = 0;
+      let tMax = 1000;
 
-      // Render 6 images
-      const imgSagZ = captureOffscreen(l, 'x', true, false);
-      const imgCorZ = captureOffscreen(l, 'y', true, false);
-      const imgAxZ = captureOffscreen(l, 'z', true, false);
+      if (isPrl && !isCvs) {
+        // Pure PRL -> Phase
+        targetModality = 'phase';
+        tMin = -500; tMax = 500;
+      } else if (isPrl && isCvs) {
+        // Both -> Prioritize Phase for PRL visibility? Or FlairStar? 
+        // User said "for PRL+... show screenshot... for CVS+ show flairstar"
+        // Let's use Phase to highlight the PRL finding.
+        targetModality = 'phase';
+        tMin = -500; tMax = 500;
+      } else {
+        // CVS only -> FlairStar
+        targetModality = 'flairStar';
+        // Calculate 1-99.99% for THIS volume? Or use global defaults?
+        // Using global defaults (calculated from FlairStar) is safe.
+        // Or recalculate dynamic?
+        // "make sure all images's default contrast range was set to 1 to 99.99 percentile"
+        // Since we have raw data, we can just use the global calculated contrast for FlairStar
+        // But wait, currentMin/Max in state are holding the FlairStar percentiles.
+        tMin = currentMin; // Already 1-99.99% of FlairStar
+        tMax = currentMax;
+      }
 
-      const imgSag = captureOffscreen(l, 'x', false, true);
-      const imgCor = captureOffscreen(l, 'y', false, true);
-      const imgAx = captureOffscreen(l, 'z', false, true);
+      // Render 6 images using the selected settings
+      const capture = (axis, isZoomed, isFull) => {
+        return renderSliceToDataURL({
+          volumes: volumes,
+          modality: targetModality,
+          axis: axis,
+          sliceCoords: { x: l.x, y: l.y, z: l.z },
+          dims: dims,
+          pixDims: pixDims,
+          fovZoom: isZoomed ? topZoom : null,
+          boxZoom: isFull ? topZoom : null,
+          showMask: showMask,
+          windowMin: tMin,
+          windowMax: tMax,
+          ignoreAspectRatio: isFull
+        });
+      };
+
+      const imgSagZ = capture('x', true, false);
+      const imgCorZ = capture('y', true, false);
+      const imgAxZ = capture('z', true, false);
+
+      const imgSag = capture('x', false, true);
+      const imgCor = capture('y', false, true);
+      const imgAx = capture('z', false, true);
 
       reportHTML += `
           <div class="lesion">
             <div class="lesion-header">
-              <div class="lesion-title">Lesion ${lesionIdx + 1}</div>
+              <div class="lesion-title">Lesion ${lesionIdx + 1} (${targetModality === 'phase' ? 'Phase' : 'FLAIRSTAR'})</div>
               <div class="lesion-meta">
-                  Vol: ${l.volume} vox | CVS: ${((lesionScores[lesionIdx] || 0) * 100).toFixed(0)}% | PRL: ${lesionPRL[lesionIdx] ? 'Yes' : 'No'}
+                  Vol: ${l.volume} vox | CVS: ${((lesionScores[lesionIdx] || 0) * 100).toFixed(0)}% | PRL: ${isPrl ? 'Yes' : 'No'}
               </div>
             </div>
             

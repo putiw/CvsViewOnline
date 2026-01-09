@@ -154,20 +154,25 @@ export function renderSliceToDataURL({
     }
 
     // 7. Output Canvas (Bake Scaling)
-    // Target Visual Size
-    // If Zoomed -> Square (targetW x targetW)
-    // If Full -> Anisotropic (targetW x targetW*Ratio) or (targetW / Ratio x targettargetW) ? 
-    // We want High Res.
-
     const targetSize = 512;
     const outputCanvas = document.createElement('canvas');
     outputCanvas.width = targetSize;
 
     if (isZoomed) {
         outputCanvas.height = targetSize; // Square
+        // Stretched if needed (ratio applies)
     } else {
-        // Full view aspect ratio visually
-        outputCanvas.height = targetSize * pixelAspectRatio;
+        if (ignoreAspectRatio) {
+            // Maintain Buffer Aspect Ratio (1:1 pixels)
+            // fullWidth / fullHeight
+            const bufferAspect = renderWidth / renderHeight;
+            // We want to fit into targetSize width, or height?
+            // Let's match width to targetSize, and let height scale naturally.
+            outputCanvas.height = targetSize / bufferAspect;
+        } else {
+            // Physical Aspect Ratio scaling
+            outputCanvas.height = targetSize * pixelAspectRatio;
+        }
     }
 
     const outCtx = outputCanvas.getContext('2d');
