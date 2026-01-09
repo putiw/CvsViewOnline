@@ -5,6 +5,7 @@ import { Asset } from 'expo-asset';
 import { loadNifti } from './utils/niftiLoader';
 import { findConnectedComponents } from './utils/lesionAnalysis';
 import { zNormalize, calculateContrastPercentiles } from './utils/imageProcessing';
+import { renderSliceToDataURL } from './utils/renderer';
 import SliceViewer from './components/SliceViewer';
 import Slider from '@react-native-community/slider';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
@@ -249,62 +250,41 @@ export default function App() {
         <h2>CVS+ Lesion Details</h2>
     `;
 
-    // Helper to capture specific canvas visual appearance
-    const captureVisual = (canvas) => {
-      if (!canvas) return null;
-      // visual dimensions
-      const rect = canvas.getBoundingClientRect();
-      // create high-res capture buffer
-      const scale = 2; // retina quality
-      const w = rect.width * scale;
-      const h = rect.height * scale;
+    // Use Headless Renderer for robust "WYSIWYG" but independent of DOM
+    const captureOffscreen = (l, axis, isZoomed, isFull) => {
+      // Prepare props matching SliceViewer
+      // Top Row (Zoomed): fovZoom = topZoom. boxZoom = null.
+      // Bottom Row (Full): fovZoom = null. boxZoom = topZoom.
 
-      const t = document.createElement('canvas');
-      t.width = w;
-      t.height = h;
-      const ctx = t.getContext('2d');
-
-      // Draw raw canvas stretched to visual dimensions
-      // This 'bakes' the CSS transform into the bitmap
-      ctx.imageSmoothingEnabled = false; // keep pixels sharp
-      ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, w, h);
-
-      return t.toDataURL('image/png');
+      return renderSliceToDataURL({
+        volumes: volumes,
+        modality: modality,
+        axis: axis,
+        sliceCoords: { x: l.x, y: l.y, z: l.z },
+        dims: dims,
+        pixDims: pixDims,
+        fovZoom: isZoomed ? topZoom : null,
+        boxZoom: isFull ? topZoom : null,
+        showMask: showMask,
+        windowMin: currentMin,
+        windowMax: currentMax
+      });
     };
 
     for (let i = 0; i < cvsLesions.length; i++) {
       const lesionIdx = lesions.indexOf(cvsLesions[i]);
       const l = lesions[lesionIdx];
 
-      // Navigate
-      setLesionIndex(lesionIdx);
-      setCoords({ x: l.x, y: l.y, z: l.z });
+      // No need to navigate UI or wait! Headless renders from state.
 
-      // Wait for render
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Render 6 images
+      const imgSagZ = captureOffscreen(l, 'x', true, false);
+      const imgCorZ = captureOffscreen(l, 'y', true, false);
+      const imgAxZ = captureOffscreen(l, 'z', true, false);
 
-      // Hide mask momentarily
-      const originalShowMask = showMask;
-      setShowMask(false);
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Find canvases
-      // Knowing the DOM structure: top 3 are zoomed, bottom 3 are full
-      const allCanvases = document.querySelectorAll('canvas');
-      // We expect 6 canvases in order: Sag(Z), Cor(Z), Ax(Z), Sag, Cor, Ax
-
-      // Top Row (Zoomed)
-      const imgSagZ = captureVisual(allCanvases[0]);
-      const imgCorZ = captureVisual(allCanvases[1]);
-      const imgAxZ = captureVisual(allCanvases[2]);
-
-      // Bottom Row (Full)
-      const imgSag = captureVisual(allCanvases[3]);
-      const imgCor = captureVisual(allCanvases[4]);
-      const imgAx = captureVisual(allCanvases[5]);
-
-      // Restore Mask
-      setShowMask(originalShowMask);
+      const imgSag = captureOffscreen(l, 'x', false, true);
+      const imgCor = captureOffscreen(l, 'y', false, true);
+      const imgAx = captureOffscreen(l, 'z', false, true);
 
       reportHTML += `
           <div class="lesion">
