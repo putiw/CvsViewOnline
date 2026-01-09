@@ -226,6 +226,7 @@ export default function App() {
     const nextIdx = (lesionIndex + 1) % lesions.length;
     setLesionIndex(nextIdx);
     const l = lesions[nextIdx];
+    console.log(`Navigating to lesion ${nextIdx + 1}, coords: (${l.x}, ${l.y}, ${l.z})`);
     setCoords({ x: l.x, y: l.y, z: l.z });
     setVeinLikelihood(lesionScores[nextIdx] || 0);
   };
