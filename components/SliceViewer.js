@@ -9,35 +9,47 @@ export default function SliceViewer({
     // Get current slice number based on axis
     const sliceNum = axis === 'x' ? coords.x : axis === 'y' ? coords.y : coords.z;
 
+    // --- Safe Instantiation of Dimensions ---
+    const [dimX, dimY, dimZ] = (dims && dims.length >= 3) ? dims : [1, 1, 1];
+    const [pixX, pixY, pixZ] = (typeof pixDims !== 'undefined' && pixDims && pixDims.length >= 3) ? pixDims : [1, 1, 1];
+    const { x, y, z } = coords;
+
+    // --- Calculate Aspect Ratio in Component Body ---
+    let pixelAspectRatio = 1.0;
+    // 0=Sagittal (y, z), 1=Coronal (x, z), 2=Axial (x, y)
+    if (axis === 'x') { // Sagittal (Y-Z)
+        pixelAspectRatio = (pixZ && pixY) ? pixZ / pixY : 1;
+    } else if (axis === 'y') { // Coronal (X-Z)
+        pixelAspectRatio = (pixZ && pixX) ? pixZ / pixX : 1;
+    } else { // Axial (X-Y)
+        pixelAspectRatio = (pixY && pixX) ? pixY / pixX : 1;
+    }
+
+    // Safety check for NaN or Infinity
+    if (!Number.isFinite(pixelAspectRatio) || pixelAspectRatio <= 0) {
+        pixelAspectRatio = 1.0;
+    }
+
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas || !volumes[modality]) return;
 
         const ctx = canvas.getContext('2d');
-        const [dimX, dimY, dimZ] = (dims && dims.length >= 3) ? dims : [1, 1, 1];
-        const [pixX, pixY, pixZ] = (typeof pixDims !== 'undefined' && pixDims && pixDims.length >= 3) ? pixDims : [1, 1, 1];
-        const { x, y, z } = coords;
 
-        // Determine slice dimensions and data indexing based on axis
         let fullWidth, fullHeight;
         let getVal;
-        let pixelAspectRatio = 1.0;
 
-        // 0=Sagittal (y, z), 1=Coronal (x, z), 2=Axial (x, y)
-        if (axis === 'x') { // Sagittal (viewing Y-Z plane)
+        if (axis === 'x') { // Sagittal
             fullWidth = dimY;
             fullHeight = dimZ;
-            pixelAspectRatio = pixZ / pixY;
             getVal = (i, j) => x + i * dimX + j * dimX * dimY;
-        } else if (axis === 'y') { // Coronal (viewing X-Z plane)
+        } else if (axis === 'y') { // Coronal
             fullWidth = dimX;
             fullHeight = dimZ;
-            pixelAspectRatio = pixZ / pixX;
             getVal = (i, j) => i + y * dimX + j * dimX * dimY;
-        } else { // Axial (viewing X-Y plane)
+        } else { // Axial
             fullWidth = dimX;
             fullHeight = dimY;
-            pixelAspectRatio = pixY / pixX;
             getVal = (i, j) => i + j * dimX + z * dimX * dimY;
         }
 
@@ -45,13 +57,13 @@ export default function SliceViewer({
         let cx, cy;
         if (fullWidth > 0 && fullHeight > 0) {
             let vX, vY;
-            if (axis === 'x') { // Sagittal
+            if (axis === 'x') {
                 vX = y;
                 vY = fullHeight - 1 - z;
-            } else if (axis === 'y') { // Coronal
+            } else if (axis === 'y') {
                 vX = x;
                 vY = fullHeight - 1 - z;
-            } else { // Axial
+            } else {
                 vX = x;
                 vY = fullHeight - 1 - y;
             }
@@ -68,9 +80,6 @@ export default function SliceViewer({
             const physicalSquareSize = minDim / fovZoom;
 
             // Compensate for pixel aspect ratio
-            // Canvas has CSS transform: scale(1, pixelAspectRatio)
-            // To get a square output: renderHeight * pixelAspectRatio == renderWidth * 1
-
             renderWidth = Math.ceil(physicalSquareSize);
             renderHeight = Math.ceil(physicalSquareSize / pixelAspectRatio);
 
@@ -163,10 +172,6 @@ export default function SliceViewer({
             const minDim = Math.min(dimX, dimY, dimZ);
             const boxSize = minDim / boxZoom;
 
-            // On bottom row (full view), we draw the box representing the FOV.
-            // FOV Width in pixels (render coords) = boxSize
-            // FOV Height in pixels (render coords) = boxSize / pixelAspectRatio
-
             const boxW = boxSize;
             const boxH = boxSize / pixelAspectRatio;
 
@@ -176,7 +181,7 @@ export default function SliceViewer({
             ctx.strokeRect(cx - halfW, cy - halfH, boxW, boxH);
         }
 
-    }, [volumes, dims, pixDims, coords, zoom, windowMin, windowMax, modality, axis, showMask, cursor, fovZoom, boxZoom]);
+    }, [volumes, dims, pixDims, coords, zoom, windowMin, windowMax, modality, axis, showMask, cursor, fovZoom, boxZoom, pixelAspectRatio, dimX, dimY, dimZ]);
 
     const handlePress = (evt) => {
         if (!interactive || !onClick) return;
