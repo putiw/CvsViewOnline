@@ -200,18 +200,20 @@ export default function App() {
     setLesionScores(prev => ({ ...prev, [lesionIndex]: val }));
   };
 
-  // --- Hoisted Stats Logic (Fix for ReferenceError) ---
+  // --- Hoisted Stats Logic ---
   const validLesionsCount = Object.values(lesionScores).filter(s => s >= 0.5).length;
   const prlLesionsCount = Object.values(lesionPRL).filter(p => p).length;
   const totalVolume = lesions.reduce((acc, l) => acc + (l.volume * pixDims[0] * pixDims[1] * pixDims[2]), 0) / 1000;
-  // ----------------------------------------------------
+  // ---------------------------
 
   const generateReport = async () => {
-    const html2canvas = (await import('html2canvas')).default;
+    if (Platform.OS !== 'web') {
+      Alert.alert("Notice", "PDF Generation is web-only for this demo.");
+      return;
+    }
 
     // Get CVS+ lesions
     const cvsLesions = lesions.filter((_, idx) => lesionScores[idx] >= 0.5);
-
 
     // Create report HTML
     let reportHTML = `
@@ -220,74 +222,143 @@ export default function App() {
       <head>
         <title>CvsView Report</title>
         <style>
-          body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
-          h1 { color: #3b82f6; }
-          .stats { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-          .lesion { margin-bottom: 30px; page-break-inside: avoid; }
-          .lesion h3 { color: #3b82f6; }
-          img { max-width: 100%; border: 1px solid #444; }
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #121212; color: #e0e0e0; }
+          h1 { color: #60a5fa; border-bottom: 2px solid #333; padding-bottom: 10px; }
+          h2 { color: #93c5fd; margin-top: 30px; }
+          .stats { background: #1e1e1e; padding: 20px; border-radius: 8px; border: 1px solid #333; }
+          .lesion { margin-bottom: 40px; background: #000; padding: 20px; border-radius: 8px; border: 1px solid #333; page-break-inside: avoid; }
+          .lesion-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
+          .lesion-title { font-size: 1.2em; font-weight: bold; color: #60a5fa; }
+          .lesion-meta { color: #888; font-size: 0.9em; }
+          /* Grid Layout for Images */
+          .image-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+          .image-col { display: flex; flex-direction: column; gap: 5px; }
+          .image-label { text-align: center; font-size: 0.8em; color: #aaa; background: #222; padding: 5px; border-radius: 4px; }
+          img { width: 100%; height: auto; border: 1px solid #444; display: block; }
         </style>
       </head>
       <body>
         <h1>CvsView Session Report</h1>
         <div class="stats">
           <h2>Session Statistics</h2>
-          <p>Total Lesions: ${lesions.length}</p>
-          <p>Total Volume: ${totalVolume.toFixed(2)} ml</p>
-          <p>CVS+ Lesions: ${validLesionsCount}</p>
-          <p>PRL+ Lesions: ${prlLesionsCount}</p>
+          <p><strong>Total Lesions:</strong> ${lesions.length}</p>
+          <p><strong>Total Volume:</strong> ${totalVolume.toFixed(2)} ml</p>
+          <p><strong>CVS+ Lesions:</strong> ${validLesionsCount}</p>
+          <p><strong>PRL+ Lesions:</strong> ${prlLesionsCount}</p>
         </div>
         <h2>CVS+ Lesion Details</h2>
     `;
 
-    // Capture screenshots for each CVS+ lesion
-    const viewerArea = document.querySelector('.flex-1.flex-col.p-2');
+    // Helper to capture specific canvas visual appearance
+    const captureVisual = (canvas) => {
+      if (!canvas) return null;
+      // visual dimensions
+      const rect = canvas.getBoundingClientRect();
+      // create high-res capture buffer
+      const scale = 2; // retina quality
+      const w = rect.width * scale;
+      const h = rect.height * scale;
+
+      const t = document.createElement('canvas');
+      t.width = w;
+      t.height = h;
+      const ctx = t.getContext('2d');
+
+      // Draw raw canvas stretched to visual dimensions
+      // This 'bakes' the CSS transform into the bitmap
+      ctx.imageSmoothingEnabled = false; // keep pixels sharp
+      ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, w, h);
+
+      return t.toDataURL('image/png');
+    };
 
     for (let i = 0; i < cvsLesions.length; i++) {
       const lesionIdx = lesions.indexOf(cvsLesions[i]);
-
-      // Navigate to lesion
-      setLesionIndex(lesionIdx);
       const l = lesions[lesionIdx];
+
+      // Navigate
+      setLesionIndex(lesionIdx);
       setCoords({ x: l.x, y: l.y, z: l.z });
 
       // Wait for render
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Temporarily hide mask
+      // Hide mask momentarily
       const originalShowMask = showMask;
       setShowMask(false);
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Capture screenshot
-      const canvas = await html2canvas(viewerArea, {
-        scale: 1,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#1a1a1a',
-      });
-      const imgData = canvas.toDataURL('image/png');
+      // Find canvases
+      // Knowing the DOM structure: top 3 are zoomed, bottom 3 are full
+      const allCanvases = document.querySelectorAll('canvas');
+      // We expect 6 canvases in order: Sag(Z), Cor(Z), Ax(Z), Sag, Cor, Ax
 
-      // Restore mask
+      // Top Row (Zoomed)
+      const imgSagZ = captureVisual(allCanvases[0]);
+      const imgCorZ = captureVisual(allCanvases[1]);
+      const imgAxZ = captureVisual(allCanvases[2]);
+
+      // Bottom Row (Full)
+      const imgSag = captureVisual(allCanvases[3]);
+      const imgCor = captureVisual(allCanvases[4]);
+      const imgAx = captureVisual(allCanvases[5]);
+
+      // Restore Mask
       setShowMask(originalShowMask);
 
       reportHTML += `
-        <div class="lesion">
-          <h3>Lesion ${lesionIdx + 1}</h3>
-          <p>Volume: ${l.volume} voxels</p>
-          <p>CVS Likelihood: ${((lesionScores[lesionIdx] || 0) * 100).toFixed(0)}%</p>
-          <p>PRL: ${lesionPRL[lesionIdx] ? 'Yes' : 'No'}</p>
-          <img src="${imgData}" alt="Lesion ${lesionIdx + 1}" />
-        </div>
-      `;
+          <div class="lesion">
+            <div class="lesion-header">
+              <div class="lesion-title">Lesion ${lesionIdx + 1}</div>
+              <div class="lesion-meta">
+                  Vol: ${l.volume} vox | CVS: ${((lesionScores[lesionIdx] || 0) * 100).toFixed(0)}% | PRL: ${lesionPRL[lesionIdx] ? 'Yes' : 'No'}
+              </div>
+            </div>
+            
+            <!-- Zoomed Row -->
+            <div class="image-grid">
+               <div class="image-col">
+                 <div class="image-label">Sagittal (Zoom)</div>
+                 <img src="${imgSagZ}" />
+               </div>
+               <div class="image-col">
+                 <div class="image-label">Coronal (Zoom)</div>
+                 <img src="${imgCorZ}" />
+               </div>
+               <div class="image-col">
+                 <div class="image-label">Axial (Zoom)</div>
+                 <img src="${imgAxZ}" />
+               </div>
+            </div>
+            
+            <!-- Full Row -->
+            <div class="image-grid">
+               <div class="image-col">
+                 <div class="image-label">Sagittal (Full)</div>
+                 <img src="${imgSag}" />
+               </div>
+               <div class="image-col">
+                 <div class="image-label">Coronal (Full)</div>
+                 <img src="${imgCor}" />
+               </div>
+               <div class="image-col">
+                 <div class="image-label">Axial (Full)</div>
+                 <img src="${imgAx}" />
+               </div>
+            </div>
+            
+          </div>
+        `;
     }
 
     reportHTML += '</body></html>';
 
-    // Open report in new window
+    // Open report
     const reportWindow = window.open('', '_blank');
     reportWindow.document.write(reportHTML);
     reportWindow.document.close();
+
+    setLoading(false);
   };
 
   // Top row Zoom Factor
