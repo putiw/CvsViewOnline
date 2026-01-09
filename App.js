@@ -150,56 +150,18 @@ export default function App() {
       console.log("Lesion Mask:", vLesion.dims);
       console.log("PixDims from Header:", vFlairStar.header.pixDims ? vFlairStar.header.pixDims.slice(1, 4) : 'N/A');
 
+      // Analyze Lesions FIRST to get labeled mask
+      console.log("Analyzing lesions...");
+      const analysis = findConnectedComponents(vLesion.data, vFlairStar.dims);
+      setLesions(analysis.lesions);
+
       setVolumes({
         flairStar: normFlairStar,
         phase: rawPhase, // Raw!
         swi: normSwi,
         flair: normFlair,
-        lesion: vLesion.data
+        lesion: analysis.labeledMask // Use the LABELED mask!
       });
-
-      // Calculate Percentiles for Defaults and Slider Limits
-      // Slider Limits: 0.01% to 99.99% (Full Range)
-      const getLimits = (data) => calculateContrastPercentiles(data, 0.01, 99.99);
-
-      const limFlairStar = getLimits(normFlairStar);
-      const limSwi = vSwi ? getLimits(normSwi) : { min: -5, max: 10 };
-      const limFlair = vFlair ? getLimits(normFlair) : { min: -5, max: 10 };
-      const limPhase = vPhase ? getLimits(vPhase.data) : { min: -1000, max: 1000 };
-
-      // Set Slider Limits
-      setContrastLimits({
-        flairStar: limFlairStar,
-        swi: limSwi,
-        flair: limFlair,
-        phase: limPhase
-      });
-
-      // Calculate Defaults (1% to 99.9% usually, but Phase is fixed)
-      const getDef = (data) => calculateContrastPercentiles(data, 1, 99.9);
-      const defFlairStar = getDef(normFlairStar);
-      const defSwi = vSwi ? getDef(normSwi) : { min: -1.5, max: 1.96 };
-      const defFlair = vFlair ? getDef(normFlair) : { min: -1.5, max: 1.96 };
-      // Phase Default: Fixed -500 to 500
-      const defPhase = { min: -500, max: 500 };
-
-      // Set contrast defaults
-      setContrastSettings({
-        flairStar: defFlairStar,
-        swi: defSwi,
-        flair: defFlair,
-        phase: defPhase,
-      });
-
-      // Removed duplicate setVolumes call that was overwriting data with undefined/incorrect values
-
-      setDims(vFlairStar.dims);
-      setPixDims(vFlairStar.pixDims); // Save pixDims
-
-      // Analyze Lesions
-      console.log("Analyzing lesions...");
-      const analysis = findConnectedComponents(vLesion.data, vFlairStar.dims);
-      setLesions(analysis.lesions);
 
       // Set initial state
       if (analysis.lesions.length > 0) {
