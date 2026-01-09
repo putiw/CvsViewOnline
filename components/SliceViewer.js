@@ -195,7 +195,7 @@ export default function SliceViewer({
             ctx.strokeRect(cx - halfW, cy - halfH, boxW, boxH);
         }
 
-    }, [volumes, dims, pixDims, coords, zoom, windowMin, windowMax, modality, axis, showMask, cursor, fovZoom, boxZoom, pixelAspectRatio, dimX, dimY, dimZ]);
+    }, [volumes, dims, pixDims, coords, zoom, windowMin, windowMax, modality, axis, showMask, cursor, fovZoom, boxZoom, pixelAspectRatio, dimX, dimY, dimZ, currentLesionLabel]);
 
     const handlePress = (evt) => {
         if (!interactive || !onClick) return;
