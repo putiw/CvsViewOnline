@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import Slider from '@react-native-community/slider';
 
 export default function SliceViewer({
-    label, axis, volumes, dims, pixDims, coords, zoom, windowMin, windowMax, modality, onClick, interactive, showMask, cursor = 'crosshair', fovZoom, boxZoom, currentLesionLabel
+    label, axis, volumes, dims, pixDims, coords, zoom, windowMin, windowMax, modality, onClick, interactive, showMask, cursor = 'crosshair', fovZoom, boxZoom, currentLesionLabel,
+    onSliceChange // New prop for scrolling
 }) {
     const canvasRef = useRef(null);
 
@@ -11,6 +13,12 @@ export default function SliceViewer({
 
     // --- Safe Instantiation of Dimensions ---
     const [dimX, dimY, dimZ] = (dims && dims.length >= 3) ? dims : [1, 1, 1];
+
+    // Determine max slice for this axis
+    let maxSlice = 1;
+    if (axis === 'x') maxSlice = dimX;
+    else if (axis === 'y') maxSlice = dimY;
+    else maxSlice = dimZ;
     const [pixX, pixY, pixZ] = (typeof pixDims !== 'undefined' && pixDims && pixDims.length >= 3) ? pixDims : [1, 1, 1];
     const { x, y, z } = coords;
 
@@ -218,20 +226,38 @@ export default function SliceViewer({
     };
 
     return (
-        <View className="flex-1 bg-black border border-white/20 relative overflow-hidden">
-            <Text className="absolute top-1 left-1 text-white bg-black/50 px-1 text-xs z-10">{label} (Slice {sliceNum})</Text>
-            <View className="flex-1 items-center justify-center">
-                <canvas
-                    ref={canvasRef}
-                    data-scale-y={pixelAspectRatio}
-                    style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain',
-                        imageRendering: 'pixelated',
-                    }}
-                />
+        <View className="flex-1 bg-black border border-white/20 relative overflow-hidden flex-col">
+            <View className="flex-1 relative">
+                <Text className="absolute top-1 left-1 text-white bg-black/50 px-1 text-xs z-10">{label} (Slice {sliceNum})</Text>
+                <View className="flex-1 items-center justify-center">
+                    <canvas
+                        ref={canvasRef}
+                        data-scale-y={pixelAspectRatio}
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain',
+                            imageRendering: 'pixelated',
+                        }}
+                    />
+                </View>
             </View>
+
+            {onSliceChange && (
+                <View className="h-6 bg-black/40 w-full justify-center px-1">
+                    <Slider
+                        style={{ width: '100%', height: 20 }}
+                        minimumValue={0}
+                        maximumValue={maxSlice - 1}
+                        step={1}
+                        value={sliceNum}
+                        onValueChange={(val) => onSliceChange(val)}
+                        minimumTrackTintColor="#3b82f6"
+                        maximumTrackTintColor="#ffffff"
+                        thumbTintColor="#3b82f6"
+                    />
+                </View>
+            )}
         </View>
     );
 }
