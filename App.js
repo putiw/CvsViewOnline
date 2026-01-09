@@ -266,36 +266,50 @@ export default function App() {
       <head>
         <title>CvsView Report</title>
         <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #121212; color: #e0e0e0; font-size: 18px; }
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #121212; color: #e0e0e0; font-size: 18px; zoom: 0.75; }
+          
+          @media print {
+            .no-print { display: none !important; }
+            body { background: #fff; color: #000; zoom: 1; }
+          }
+          
           h1 { color: #60a5fa; border-bottom: 2px solid #333; padding-bottom: 20px; font-size: 32px; margin-bottom: 40px; }
           h2 { color: #93c5fd; margin-top: 50px; font-size: 26px; border-bottom: 1px solid #333; padding-bottom: 10px; }
-          /* Stats: Make them HUGE as requested */
+          
           .stats { background: #1e1e1e; padding: 30px; border-radius: 12px; border: 1px solid #333; font-size: 24px; margin-bottom: 40px; }
           .stats p { margin: 15px 0; line-height: 1.4; }
           .stats h2 { margin-top: 0; font-size: 32px; border-bottom: 1px solid #444; padding-bottom: 15px; margin-bottom: 20px; color: #fff; }
 
-          /* Axis-based Grid Layout */
           .axis-container { display: flex; justify-content: center; gap: 30px; margin-bottom: 40px; }
           .axis-column { display: flex; flex-direction: column; gap: 20px; align-items: center; width: 30%; }
           .axis-title { font-size: 22px; color: #93c5fd; font-weight: bold; margin-bottom: 10px; text-align: center; }
           
           .img-wrapper { width: 100%; display: flex; flex-direction: column; align-items: center; background: #000; border: 1px solid #333; padding: 10px; border-radius: 8px; }
-          .img-label { color: #aaa; margin-bottom: 8px; font-size: 16px; }
+          .img-label { color: #aaa; margin-bottom: 8px; font-size: 16px; font-family: monospace; }
           
-          img { 
-            display: block;
-            max-width: 100%;
-            object-fit: contain; 
-            background: #000; 
+          img { display: block; max-width: 100%; object-fit: contain; background: #000; }
+          .zoom-img { height: 250px; width: 250px; }
+          .full-img { height: 500px; width: auto; }
+          
+          .lesion { margin-bottom: 60px; background: #000; padding: 30px; border-radius: 16px; border: 1px solid #333; page-break-inside: avoid; }
+          .lesion-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 25px; }
+          .lesion-title { font-size: 1.6em; font-weight: bold; color: #60a5fa; }
+          .lesion-title.cvs { color: #4ade80; }
+          .lesion-title.prl { color: #60a5fa; }
+          .lesion-meta { color: #aaa; font-size: 1.2em; }
+          
+          .pdf-btn { 
+            position: fixed; top: 20px; right: 20px; 
+            padding: 15px 30px; background: #2563eb; color: #fff; 
+            border: none; border-radius: 8px; font-size: 20px; cursor: pointer; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 1000;
           }
-          
-          /* Specific heights */
-          .zoom-img { height: 250px; width: 250px; } /* Smaller Zoom (approx 70-80% of previous) */
-          .full-img { height: 500px; width: auto; } /* Tall Full View */
+          .pdf-btn:hover { background: #1d4ed8; }
 
         </style>
       </head>
       <body>
+        <button class="pdf-btn no-print" onclick="window.print()">Download PDF</button>
         <h1>CvsView Session Report</h1>
         <div class="stats">
           <h2>Session Statistics</h2>
@@ -340,18 +354,18 @@ export default function App() {
       const isCvs = (lesionScores[lesionIdx] || 0) > 0.5;
       const isPrl = !!lesionPRL[lesionIdx];
 
-      // Determine Render Tasks (Modality List)
+      // Determine Render Tasks (CVS First!)
       const renderTasks = [];
 
       if (isPrl && isCvs) {
-        // Dual Modality: Show both
-        renderTasks.push({ modality: 'phase', min: -500, max: 500, label: 'PRL check' });
-        renderTasks.push({ modality: 'flairStar', min: currentMin, max: currentMax, label: 'CVS check' });
+        // Dual Modality: Show CVS (FLAIRSTAR) first, then PRL (Phase)
+        renderTasks.push({ modality: 'flairStar', min: currentMin, max: currentMax, label: 'CVS check', type: 'cvs' });
+        renderTasks.push({ modality: 'phase', min: -500, max: 500, label: 'PRL check', type: 'prl' });
       } else if (isPrl) {
-        renderTasks.push({ modality: 'phase', min: -500, max: 500, label: 'PRL' });
+        renderTasks.push({ modality: 'phase', min: -500, max: 500, label: 'PRL', type: 'prl' });
       } else {
         // CVS only
-        renderTasks.push({ modality: 'flairStar', min: currentMin, max: currentMax, label: 'CVS' });
+        renderTasks.push({ modality: 'flairStar', min: currentMin, max: currentMax, label: 'CVS', type: 'cvs' });
       }
 
       // Generate HTML for each task
@@ -380,14 +394,15 @@ export default function App() {
         const imgCor = capture('y', false, true);
         const imgAx = capture('z', false, true);
 
-        // Titles
+        //Titles & Colors
         const modTitle = task.modality === 'phase' ? 'Phase' : 'FLAIRSTAR';
         const contextStr = task.label ? `(${task.label})` : '';
+        const titleClass = task.type === 'cvs' ? 'cvs' : 'prl';
 
         reportHTML += `
             <div class="lesion">
               <div class="lesion-header">
-                <div class="lesion-title">Lesion ${lesionIdx + 1}: ${modTitle} ${contextStr}</div>
+                <div class="lesion-title ${titleClass}">Lesion ${lesionIdx + 1}: ${modTitle} ${contextStr}</div>
                 <div class="lesion-meta">
                     Vol: ${l.volume} vox | CVS Score: ${((lesionScores[lesionIdx] || 0) * 100).toFixed(0)}% | PRL: ${isPrl ? 'Yes' : 'No'}
                 </div>
@@ -398,11 +413,11 @@ export default function App() {
                 <div class="axis-column">
                   <div class="axis-title">Sagittal</div>
                   <div class="img-wrapper">
-                    <div class="img-label">Zoom</div>
+                    <div class="img-label">Zoom (Slice ${l.x})</div>
                     <img class="zoom-img" src="${imgSagZ}" />
                   </div>
                   <div class="img-wrapper">
-                    <div class="img-label">Full Context</div>
+                    <div class="img-label">Full (Slice ${l.x})</div>
                     <img class="full-img" src="${imgSag}" />
                   </div>
                 </div>
@@ -411,11 +426,11 @@ export default function App() {
                 <div class="axis-column">
                   <div class="axis-title">Coronal</div>
                   <div class="img-wrapper">
-                    <div class="img-label">Zoom</div>
+                    <div class="img-label">Zoom (Slice ${l.y})</div>
                     <img class="zoom-img" src="${imgCorZ}" />
                   </div>
                   <div class="img-wrapper">
-                    <div class="img-label">Full Context</div>
+                    <div class="img-label">Full (Slice ${l.y})</div>
                     <img class="full-img" src="${imgCor}" />
                   </div>
                 </div>
@@ -424,11 +439,11 @@ export default function App() {
                 <div class="axis-column">
                   <div class="axis-title">Axial</div>
                   <div class="img-wrapper">
-                    <div class="img-label">Zoom</div>
+                    <div class="img-label">Zoom (Slice ${l.z})</div>
                     <img class="zoom-img" src="${imgAxZ}" />
                   </div>
                   <div class="img-wrapper">
-                    <div class="img-label">Full Context</div>
+                    <div class="img-label">Full (Slice ${l.z})</div>
                     <img class="full-img" src="${imgAx}" />
                   </div>
                 </div>
