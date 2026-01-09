@@ -280,8 +280,8 @@ export default function App() {
           .stats p { margin: 15px 0; line-height: 1.4; }
           .stats h2 { margin-top: 0; font-size: 32px; border-bottom: 1px solid #444; padding-bottom: 15px; margin-bottom: 20px; color: #fff; }
 
-          .axis-container { display: flex; justify-content: center; gap: 30px; margin-bottom: 40px; }
-          .axis-column { display: flex; flex-direction: column; gap: 20px; align-items: center; width: 30%; }
+          .axis-container { display: flex; justify-content: center; gap: 15px; margin-bottom: 40px; }
+          .axis-column { display: flex; flex-direction: column; gap: 20px; align-items: center; flex: 1; max-width: 400px; }
           .axis-title { font-size: 22px; color: #93c5fd; font-weight: bold; margin-bottom: 10px; text-align: center; }
           
           .img-wrapper { width: 100%; display: flex; flex-direction: column; align-items: center; background: #000; border: 1px solid #333; padding: 10px; border-radius: 8px; }
@@ -297,19 +297,10 @@ export default function App() {
           .lesion-title.cvs { color: #4ade80; }
           .lesion-title.prl { color: #60a5fa; }
           .lesion-meta { color: #aaa; font-size: 1.2em; }
-          
-          .pdf-btn { 
-            position: fixed; top: 20px; right: 20px; 
-            padding: 15px 30px; background: #2563eb; color: #fff; 
-            border: none; border-radius: 8px; font-size: 20px; cursor: pointer; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 1000;
-          }
-          .pdf-btn:hover { background: #1d4ed8; }
 
         </style>
       </head>
       <body>
-        <button class="pdf-btn no-print" onclick="window.print()">Download PDF</button>
         <h1>CvsView Session Report</h1>
         <div class="stats">
           <h2>Session Statistics</h2>
