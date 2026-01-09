@@ -35,6 +35,7 @@ export default function App() {
 
   // Coordinates (voxel space)
   const [coords, setCoords] = useState({ x: 0, y: 0, z: 0 });
+  const [lesionCoords, setLesionCoords] = useState({}); // Persistence: { index: {x,y,z} }
   const [zoom, setZoom] = useState(1); // Set default zoom to 1
 
   // Contrast Settings (Per Modality)
@@ -206,23 +207,44 @@ export default function App() {
     }
   };
 
+  const handleUpdateCoords = (newCoordsFunc) => {
+    setCoords(prev => {
+      const next = typeof newCoordsFunc === 'function' ? newCoordsFunc(prev) : newCoordsFunc;
+      // Search index is 0-based, same as lesionIndex
+      setLesionCoords(prevMap => ({
+        ...prevMap,
+        [lesionIndex]: next
+      }));
+      return next;
+    });
+  };
+
+  const jumpToLesion = (idx) => {
+    if (idx < 0 || idx >= lesions.length) return;
+    setLesionIndex(idx);
+
+    // Check persistence
+    if (lesionCoords[idx]) {
+      console.log(`Restoring saved view for lesion ${idx + 1}`);
+      setCoords(lesionCoords[idx]);
+    } else {
+      const l = lesions[idx];
+      console.log(`Resetting view for lesion ${idx + 1}`);
+      setCoords({ x: l.x, y: l.y, z: l.z });
+    }
+    setVeinLikelihood(lesionScores[idx] || 0);
+  };
+
   const handleNextLesion = () => {
     if (lesions.length === 0) return;
     const nextIdx = (lesionIndex + 1) % lesions.length;
-    setLesionIndex(nextIdx);
-    const l = lesions[nextIdx];
-    console.log(`Navigating to lesion ${nextIdx + 1}, coords: (${l.x}, ${l.y}, ${l.z})`);
-    setCoords({ x: l.x, y: l.y, z: l.z });
-    setVeinLikelihood(lesionScores[nextIdx] || 0);
+    jumpToLesion(nextIdx);
   };
 
   const handlePrevLesion = () => {
     if (lesions.length === 0) return;
     const prevIdx = (lesionIndex - 1 + lesions.length) % lesions.length;
-    setLesionIndex(prevIdx);
-    const l = lesions[prevIdx];
-    setCoords({ x: l.x, y: l.y, z: l.z });
-    setVeinLikelihood(lesionScores[prevIdx] || 0);
+    jumpToLesion(prevIdx);
   };
 
   const updateScore = (val) => {
@@ -493,22 +515,22 @@ export default function App() {
           {/* Top Row: Zoomed Views */}
           <View className="flex-1 flex-row gap-2">
             <SliceViewer label="Sagittal (Zoom)" axis="x" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id}
-              onSliceChange={(val) => setCoords(prev => ({ ...prev, x: val }))}
+              onSliceChange={(val) => handleUpdateCoords(prev => ({ ...prev, x: val }))}
             />
             <SliceViewer label="Coronal (Zoom)" axis="y" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id}
-              onSliceChange={(val) => setCoords(prev => ({ ...prev, y: val }))}
+              onSliceChange={(val) => handleUpdateCoords(prev => ({ ...prev, y: val }))}
             />
             <SliceViewer label="Axial (Zoom)" axis="z" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id}
-              onSliceChange={(val) => setCoords(prev => ({ ...prev, z: val }))}
+              onSliceChange={(val) => handleUpdateCoords(prev => ({ ...prev, z: val }))}
             />
           </View>
 
           {/* Bottom Row: Full Views (Less Zoom) */}
           <View className="flex-1 flex-row gap-2">
             <View className="flex-1 flex-row gap-2">
-              <SliceViewer label="Sagittal" axis="x" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={setCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
-              <SliceViewer label="Coronal" axis="y" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={setCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
-              <SliceViewer label="Axial" axis="z" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={setCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
+              <SliceViewer label="Sagittal" axis="x" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={handleUpdateCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
+              <SliceViewer label="Coronal" axis="y" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={handleUpdateCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
+              <SliceViewer label="Axial" axis="z" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={handleUpdateCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
             </View>
           </View>
         </View>
@@ -520,12 +542,35 @@ export default function App() {
             <Text className="text-white text-xl font-bold mb-4">Controls</Text>
 
             <Text className="text-text-muted mb-2">Lesion Navigation</Text>
-            <View className="flex-row items-center justify-between mb-4 bg-black/20 p-2 rounded">
+            <View className="flex-row items-center justify-between mb-2 bg-black/20 p-2 rounded">
               <TouchableOpacity onPress={handlePrevLesion} className="bg-white/10 p-2 rounded w-10 items-center"><Text className="text-white font-bold">{"<"}</Text></TouchableOpacity>
               <Text className="text-white font-mono text-lg">
                 {lesions.length > 0 ? `${lesionIndex + 1} / ${lesions.length}` : "0 / 0"}
               </Text>
               <TouchableOpacity onPress={handleNextLesion} className="bg-white/10 p-2 rounded w-10 items-center"><Text className="text-white font-bold">{">"}</Text></TouchableOpacity>
+            </View>
+
+            <View className="flex-row gap-2 mb-4">
+              <TouchableOpacity
+                onPress={() => {
+                  if (lesions[lesionIndex]) {
+                    const l = lesions[lesionIndex];
+                    handleUpdateCoords({ x: l.x, y: l.y, z: l.z });
+                  }
+                }}
+                className="flex-1 bg-white/10 p-2 rounded items-center active:bg-white/20"
+              >
+                <Text className="text-white text-xs font-bold">Reset Camera</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setShowMask(!showMask)}
+                className={`flex-1 p-2 rounded items-center ${showMask ? 'bg-green-500/20 border border-green-500/50' : 'bg-white/10'}`}
+              >
+                <Text className={`text-xs font-bold ${showMask ? 'text-green-400' : 'text-white'}`}>
+                  {showMask ? 'Hide Mask' : 'Show Mask'}
+                </Text>
+              </TouchableOpacity>
             </View>
             <Text className="text-xs text-text-muted">Vol: {lesions[lesionIndex]?.volume} vox</Text>
           </View>
