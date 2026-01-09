@@ -134,14 +134,17 @@ export default function SliceViewer({
                 data[pxIdx + 3] = 255;
 
                 if (showMask && lesionData && lesionData[idx] > 0.5) {
+                    const currentLabel = Math.round(lesionData[idx]);
                     let isEdge = false;
+
                     if (sourceI === 0 || sourceI === fullWidth - 1 || jFlip === 0 || jFlip === fullHeight - 1) {
                         isEdge = true;
                     } else {
-                        const n1 = lesionData[getVal(sourceI + 1, jFlip)] > 0.5;
-                        const n2 = lesionData[getVal(sourceI - 1, jFlip)] > 0.5;
-                        const n3 = lesionData[getVal(sourceI, jFlip + 1)] > 0.5;
-                        const n4 = lesionData[getVal(sourceI, jFlip - 1)] > 0.5;
+                        // Check if neighbors have the SAME label
+                        const n1 = Math.round(lesionData[getVal(sourceI + 1, jFlip)]) === currentLabel;
+                        const n2 = Math.round(lesionData[getVal(sourceI - 1, jFlip)]) === currentLabel;
+                        const n3 = Math.round(lesionData[getVal(sourceI, jFlip + 1)]) === currentLabel;
+                        const n4 = Math.round(lesionData[getVal(sourceI, jFlip - 1)]) === currentLabel;
                         if (!n1 || !n2 || !n3 || !n4) isEdge = true;
                     }
 
@@ -150,10 +153,16 @@ export default function SliceViewer({
                         const lesionLabel = Math.round(lesionData[idx]);
                         const isCurrentLesion = currentLesionLabel && lesionLabel === currentLesionLabel;
 
-                        // Green for current lesion, Blue for others
-                        data[pxIdx] = 0;
-                        data[pxIdx + 1] = isCurrentLesion ? 255 : 0;
-                        data[pxIdx + 2] = isCurrentLesion ? 0 : 255;
+                        // Green (#00ff00) for current lesion, Blue (#60a5fa) for others
+                        if (isCurrentLesion) {
+                            data[pxIdx] = 0;
+                            data[pxIdx + 1] = 255;
+                            data[pxIdx + 2] = 0;
+                        } else {
+                            data[pxIdx] = 96;   // #60a5fa
+                            data[pxIdx + 1] = 165;
+                            data[pxIdx + 2] = 250;
+                        }
                         data[pxIdx + 3] = 255;
                     }
                 }
