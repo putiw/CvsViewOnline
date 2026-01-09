@@ -2,8 +2,7 @@
 export function renderSliceToDataURL({
     volumes, modality, axis, sliceCoords, dims, pixDims,
     fovZoom, showMask, windowMin, windowMax,
-    boxZoom, // Optional: for drawing the box on full views
-    ignoreAspectRatio = false // Force isotropic pixels (mostly for full views if headers are weird)
+    boxZoom // Optional: for drawing the box on full views
 }) {
     const { x, y, z } = sliceCoords;
     const [dimX, dimY, dimZ] = dims;
@@ -11,14 +10,12 @@ export function renderSliceToDataURL({
 
     // 1. Calculate Pixel Aspect Ratio
     let pixelAspectRatio = 1.0;
-    if (!ignoreAspectRatio) {
-        if (axis === 'x') { // Sagittal (Y-Z)
-            pixelAspectRatio = (pixZ && pixY) ? pixZ / pixY : 1;
-        } else if (axis === 'y') { // Coronal (X-Z)
-            pixelAspectRatio = (pixZ && pixX) ? pixZ / pixX : 1;
-        } else { // Axial (X-Y)
-            pixelAspectRatio = (pixY && pixX) ? pixY / pixX : 1;
-        }
+    if (axis === 'x') { // Sagittal (Y-Z)
+        pixelAspectRatio = (pixZ && pixY) ? pixZ / pixY : 1;
+    } else if (axis === 'y') { // Coronal (X-Z)
+        pixelAspectRatio = (pixZ && pixX) ? pixZ / pixX : 1;
+    } else { // Axial (X-Y)
+        pixelAspectRatio = (pixY && pixX) ? pixY / pixX : 1;
     }
     if (!Number.isFinite(pixelAspectRatio) || pixelAspectRatio <= 0) pixelAspectRatio = 1.0;
 
@@ -162,17 +159,8 @@ export function renderSliceToDataURL({
         outputCanvas.height = targetSize; // Square
         // Stretched if needed (ratio applies)
     } else {
-        if (ignoreAspectRatio) {
-            // Maintain Buffer Aspect Ratio (1:1 pixels)
-            // fullWidth / fullHeight
-            const bufferAspect = renderWidth / renderHeight;
-            // We want to fit into targetSize width, or height?
-            // Let's match width to targetSize, and let height scale naturally.
-            outputCanvas.height = targetSize / bufferAspect;
-        } else {
-            // Physical Aspect Ratio scaling
-            outputCanvas.height = targetSize * pixelAspectRatio;
-        }
+        // Full view aspect ratio visually
+        outputCanvas.height = targetSize * pixelAspectRatio;
     }
 
     const outCtx = outputCanvas.getContext('2d');

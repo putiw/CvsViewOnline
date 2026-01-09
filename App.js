@@ -116,17 +116,38 @@ export default function App() {
         setPixDims(vFlairStar.header.pixDims.slice(1, 4));
       }
 
-      // 3. Process Volumes (No Z-Score, keeping raw values for flexible contrast)
-      // vFlairStar
-      // vPhase
-      // vSwi
-      // vFlair
+      // 3. Process Volumes
+      // Z-Normalize everything EXCEPT Phase (User request)
+      const t0 = performance.now();
+      const normFlairStar = zNormalize(vFlairStar.data);
+      const normSwi = vSwi ? zNormalize(vSwi.data) : null;
+      const normFlair = vFlair ? zNormalize(vFlair.data) : null;
+      // Phase kept raw for specific fixed-range viewing (-500 to 500)
+      const rawPhase = vPhase ? vPhase.data : null;
+      console.log(`Normalization took ${(performance.now() - t0).toFixed(0)}ms`);
 
-      // Calculate percentiles for automatic contrast
+      // Calculate percentiles
+      // FlairStar etc: 1% to 99.9% of NORMALIZED data
       const t1 = performance.now();
-      const flairStarPerc = calculateContrastPercentiles(vFlairStar.data, 0.01, 0.9999);
-      const swiPerc = vSwi ? calculateContrastPercentiles(vSwi.data, 0.01, 0.9999) : { min: -1.5, max: 1.96 };
-      const flairPerc = vFlair ? calculateContrastPercentiles(vFlair.data, 0.01, 0.9999) : { min: -1.5, max: 1.96 };
+      const flairStarPerc = calculateContrastPercentiles(normFlairStar, 0.01, 0.999);
+      const swiPerc = vSwi ? calculateContrastPercentiles(normSwi, 0.01, 0.999) : { min: -1.5, max: 1.96 };
+      const flairPerc = vFlair ? calculateContrastPercentiles(normFlair, 0.01, 0.999) : { min: -1.5, max: 1.96 };
+      // Phase: No percentiles needed? User said -500 to 500. 
+      // But we can calculate just in case, or skip. Skip to save time.
+
+      console.log(`Percentile calculation took ${(performance.now() - t1).toFixed(0)}ms`);
+
+      console.log("Lesion Mask:", vLesion.dims);
+      console.log("PixDims from Header:", vFlairStar.header.pixDims ? vFlairStar.header.pixDims.slice(1, 4) : 'N/A');
+
+      // Store volumes
+      setVolumes({
+        flairStar: normFlairStar,
+        phase: rawPhase, // Raw!
+        swi: normSwi,
+        flair: normFlair,
+        lesion: vLesion.img
+      });
       const phasePerc = vPhase ? calculateContrastPercentiles(vPhase.data, 0.01, 0.9999) : { min: -1.5, max: 1.96 };
       console.log(`Percentile calculation took ${(performance.now() - t1).toFixed(0)}ms`);
 
@@ -324,8 +345,8 @@ export default function App() {
           boxZoom: isFull ? topZoom : null,
           showMask: showMask,
           windowMin: tMin,
-          windowMax: tMax,
-          ignoreAspectRatio: isFull
+          windowMax: tMax
+          // Removed ignoreAspectRatio (User wants physical truth)
         });
       };
 

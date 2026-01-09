@@ -6,9 +6,9 @@ export function calculatePercentile(sortedData, percentile) {
 
 // Calculate 1st and 99th percentiles for contrast windowing
 export function calculateContrastPercentiles(data) {
-    // Sample the data for performance (use every 10th voxel)
+    // Sample the data for performance (use every 100th voxel)
     const sampledData = [];
-    for (let i = 0; i < data.length; i += 10) {
+    for (let i = 0; i < data.length; i += 100) {
         sampledData.push(data[i]);
     }
 
@@ -16,7 +16,7 @@ export function calculateContrastPercentiles(data) {
     sampledData.sort((a, b) => a - b);
 
     const p1 = calculatePercentile(sampledData, 1);
-    const p99 = calculatePercentile(sampledData, 99.9);
+    const p99 = calculatePercentile(sampledData, 99.99);
 
     return { min: p1, max: p99 };
 }
