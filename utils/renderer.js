@@ -150,23 +150,31 @@ export function renderSliceToDataURL({
         ctx.strokeRect(cx - boxW / 2, cy - boxH / 2, boxW, boxH);
     }
 
-    // 7. Output Canvas (Bake Scaling)
+    // 7. Output Canvas (Correct Scaling Based on Actual Data Dimensions)
     const targetSize = 512;
     const outputCanvas = document.createElement('canvas');
-    outputCanvas.width = targetSize;
+
+    // Calculate output dimensions based on the ACTUAL render buffer aspect ratio
+    const bufferAspectRatio = renderWidth / renderHeight; // e.g., Sagittal: 512/144 = 3.56
 
     if (isZoomed) {
-        outputCanvas.height = targetSize; // Square
-        // Stretched if needed (ratio applies)
+        // Zoomed views are square in physical space
+        outputCanvas.width = targetSize;
+        outputCanvas.height = targetSize;
     } else {
-        // Full view aspect ratio visually
-        outputCanvas.height = targetSize * pixelAspectRatio;
+        // Full views: maintain physical aspect ratio
+        // Physical visual aspect = (renderWidth / renderHeight) / pixelAspectRatio
+        // For Sagittal (512x144, ratio 2.67): visual = 512 / (144 * 2.67) = 1.33
+        // So if width=512, height = 512 / 1.33 = 384
+
+        outputCanvas.width = targetSize;
+        outputCanvas.height = Math.floor(targetSize / bufferAspectRatio * pixelAspectRatio);
     }
 
     const outCtx = outputCanvas.getContext('2d');
     outCtx.imageSmoothingEnabled = false; // Sharp pixels
 
-    // Draw buffer stretched to output
+    // Draw buffer stretched to output (this applies the vertical scaling)
     outCtx.drawImage(bufferCanvas, 0, 0, renderWidth, renderHeight, 0, 0, outputCanvas.width, outputCanvas.height);
 
     return outputCanvas.toDataURL('image/png');
