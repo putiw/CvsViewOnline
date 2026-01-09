@@ -267,7 +267,8 @@ export default function App() {
         boxZoom: isFull ? topZoom : null,
         showMask: showMask,
         windowMin: currentMin,
-        windowMax: currentMax
+        windowMax: currentMax,
+        ignoreAspectRatio: isFull // Force 1:1 for Full Views to avoid "Tall" distortion
       });
     };
 
