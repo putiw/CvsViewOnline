@@ -250,7 +250,7 @@ export default function App() {
 
   const generateReport = async () => {
     if (Platform.OS !== 'web') {
-      Alert.alert("Notice", "PDF Generation is web-only for this demo.");
+      alert("Notice: PDF Generation is web-only for this demo.");
       return;
     }
 
@@ -264,19 +264,29 @@ export default function App() {
       <head>
         <title>CvsView Report</title>
         <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #121212; color: #e0e0e0; }
-          h1 { color: #60a5fa; border-bottom: 2px solid #333; padding-bottom: 10px; }
-          h2 { color: #93c5fd; margin-top: 30px; }
-          .stats { background: #1e1e1e; padding: 20px; border-radius: 8px; border: 1px solid #333; }
-          .lesion { margin-bottom: 40px; background: #000; padding: 20px; border-radius: 8px; border: 1px solid #333; page-break-inside: avoid; }
-          .lesion-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
-          .lesion-title { font-size: 1.2em; font-weight: bold; color: #60a5fa; }
-          .lesion-meta { color: #888; font-size: 0.9em; }
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #121212; color: #e0e0e0; font-size: 16px; }
+          h1 { color: #60a5fa; border-bottom: 2px solid #333; padding-bottom: 15px; font-size: 28px; }
+          h2 { color: #93c5fd; margin-top: 40px; font-size: 22px; }
+          .stats { background: #1e1e1e; padding: 25px; border-radius: 8px; border: 1px solid #333; font-size: 18px; margin-bottom: 30px; }
+          .stats p { margin: 10px 0; }
+          .lesion { margin-bottom: 50px; background: #000; padding: 25px; border-radius: 12px; border: 1px solid #333; page-break-inside: avoid; }
+          .lesion-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
+          .lesion-title { font-size: 1.4em; font-weight: bold; color: #60a5fa; }
+          .lesion-meta { color: #aaa; font-size: 1.1em; }
+          
           /* Grid Layout for Images */
-          .image-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-          .image-col { display: flex; flex-direction: column; gap: 5px; }
-          .image-label { text-align: center; font-size: 0.8em; color: #aaa; background: #222; padding: 5px; border-radius: 4px; }
-          img { width: 100%; height: auto; border: 1px solid #444; display: block; }
+          .image-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+          .image-col { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+          .image-label { text-align: center; font-size: 1em; color: #ccc; background: #222; padding: 6px 12px; border-radius: 4px; width: 100%; box-sizing: border-box; }
+          
+          /* Image Constraint matches Main App "Viewer" feel */
+          img { 
+            width: 100%; 
+            height: 250px; /* Constrain Height */
+            object-fit: contain; /* Letterbox to preserve aspect ratio without exploding height */
+            background: #050505; 
+            border: 1px solid #444; 
+          }
         </style>
       </head>
       <body>
@@ -288,30 +298,8 @@ export default function App() {
           <p><strong>CVS+ Lesions:</strong> ${validLesionsCount}</p>
           <p><strong>PRL+ Lesions:</strong> ${prlLesionsCount}</p>
         </div>
-        <h2>CVS+ Lesion Details</h2>
+        <h2>Lesion Details</h2>
     `;
-
-    // Use Headless Renderer for robust "WYSIWYG" but independent of DOM
-    const captureOffscreen = (l, axis, isZoomed, isFull) => {
-      // Prepare props matching SliceViewer
-      // Top Row (Zoomed): fovZoom = topZoom. boxZoom = null.
-      // Bottom Row (Full): fovZoom = null. boxZoom = topZoom.
-
-      return renderSliceToDataURL({
-        volumes: volumes,
-        modality: modality,
-        axis: axis,
-        sliceCoords: { x: l.x, y: l.y, z: l.z },
-        dims: dims,
-        pixDims: pixDims,
-        fovZoom: isZoomed ? topZoom : null,
-        boxZoom: isFull ? topZoom : null,
-        showMask: showMask,
-        windowMin: currentMin,
-        windowMax: currentMax,
-        ignoreAspectRatio: isFull // Force 1:1 for Full Views to avoid "Tall" distortion
-      });
-    };
 
     // Identify lesions of interest (CVS+ > 0.5 OR PRL+)
     const interestIndices = lesions.map((l, i) => {
@@ -327,111 +315,106 @@ export default function App() {
       const isCvs = (lesionScores[lesionIdx] || 0) > 0.5;
       const isPrl = !!lesionPRL[lesionIdx];
 
-      // Determine Modality & Contrast
-      let targetModality = 'flairStar';
-      let tMin = 0;
-      let tMax = 1000;
+      // Determine Render Tasks (Modality List)
+      const renderTasks = [];
 
-      if (isPrl && !isCvs) {
-        // Pure PRL -> Phase
-        targetModality = 'phase';
-        tMin = -500; tMax = 500;
-      } else if (isPrl && isCvs) {
-        // Both -> Prioritize Phase for PRL visibility? Or FlairStar? 
-        // User said "for PRL+... show screenshot... for CVS+ show flairstar"
-        // Let's use Phase to highlight the PRL finding.
-        targetModality = 'phase';
-        tMin = -500; tMax = 500;
+      if (isPrl && isCvs) {
+        // Dual Modality: Show both
+        renderTasks.push({ modality: 'phase', min: -500, max: 500, label: 'PRL check' });
+        renderTasks.push({ modality: 'flairStar', min: currentMin, max: currentMax, label: 'CVS check' });
+      } else if (isPrl) {
+        renderTasks.push({ modality: 'phase', min: -500, max: 500, label: 'PRL' });
       } else {
-        // CVS only -> FlairStar
-        targetModality = 'flairStar';
-        // Calculate 1-99.99% for THIS volume? Or use global defaults?
-        // Using global defaults (calculated from FlairStar) is safe.
-        // Or recalculate dynamic?
-        // "make sure all images's default contrast range was set to 1 to 99.99 percentile"
-        // Since we have raw data, we can just use the global calculated contrast for FlairStar
-        // But wait, currentMin/Max in state are holding the FlairStar percentiles.
-        tMin = currentMin; // Already 1-99.99% of FlairStar
-        tMax = currentMax;
+        // CVS only
+        renderTasks.push({ modality: 'flairStar', min: currentMin, max: currentMax, label: 'CVS' });
       }
 
-      // Render 6 images using the selected settings
-      const capture = (axis, isZoomed, isFull) => {
-        return renderSliceToDataURL({
-          volumes: volumes,
-          modality: targetModality,
-          axis: axis,
-          sliceCoords: { x: l.x, y: l.y, z: l.z },
-          dims: dims,
-          pixDims: pixDims,
-          fovZoom: isZoomed ? topZoom : null,
-          boxZoom: isFull ? topZoom : null,
-          showMask: showMask,
-          windowMin: tMin,
-          windowMax: tMax
-          // Removed ignoreAspectRatio (User wants physical truth)
-        });
-      };
+      // Generate HTML for each task
+      for (const task of renderTasks) {
+        const capture = (axis, isZoomed, isFull) => {
+          return renderSliceToDataURL({
+            volumes: volumes,
+            modality: task.modality,
+            axis: axis,
+            sliceCoords: { x: l.x, y: l.y, z: l.z },
+            dims: dims,
+            pixDims: pixDims,
+            fovZoom: isZoomed ? topZoom : null,
+            boxZoom: isFull ? topZoom : null,
+            showMask: showMask,
+            windowMin: task.min,
+            windowMax: task.max
+          });
+        };
 
-      const imgSagZ = capture('x', true, false);
-      const imgCorZ = capture('y', true, false);
-      const imgAxZ = capture('z', true, false);
+        const imgSagZ = capture('x', true, false);
+        const imgCorZ = capture('y', true, false);
+        const imgAxZ = capture('z', true, false);
 
-      const imgSag = capture('x', false, true);
-      const imgCor = capture('y', false, true);
-      const imgAx = capture('z', false, true);
+        const imgSag = capture('x', false, true);
+        const imgCor = capture('y', false, true);
+        const imgAx = capture('z', false, true);
 
-      reportHTML += `
-          <div class="lesion">
-            <div class="lesion-header">
-              <div class="lesion-title">Lesion ${lesionIdx + 1} (${targetModality === 'phase' ? 'Phase' : 'FLAIRSTAR'})</div>
-              <div class="lesion-meta">
-                  Vol: ${l.volume} vox | CVS: ${((lesionScores[lesionIdx] || 0) * 100).toFixed(0)}% | PRL: ${isPrl ? 'Yes' : 'No'}
+        // Titles
+        const modTitle = task.modality === 'phase' ? 'Phase' : 'FLAIRSTAR';
+        const contextStr = task.label ? `(${task.label})` : '';
+
+        reportHTML += `
+            <div class="lesion">
+              <div class="lesion-header">
+                <div class="lesion-title">Lesion ${lesionIdx + 1}: ${modTitle} ${contextStr}</div>
+                <div class="lesion-meta">
+                    Vol: ${l.volume} vox | CVS Score: ${((lesionScores[lesionIdx] || 0) * 100).toFixed(0)}% | PRL: ${isPrl ? 'Yes' : 'No'}
+                </div>
               </div>
+              
+              <!-- Zoomed Row -->
+              <div class="image-grid">
+                 <div class="image-col">
+                   <div class="image-label">Sagittal (Zoom)</div>
+                   <img src="${imgSagZ}" />
+                 </div>
+                 <div class="image-col">
+                   <div class="image-label">Coronal (Zoom)</div>
+                   <img src="${imgCorZ}" />
+                 </div>
+                 <div class="image-col">
+                   <div class="image-label">Axial (Zoom)</div>
+                   <img src="${imgAxZ}" />
+                 </div>
+              </div>
+              
+              <!-- Full Row -->
+              <div class="image-grid">
+                 <div class="image-col">
+                   <div class="image-label">Sagittal (Full)</div>
+                   <img src="${imgSag}" />
+                 </div>
+                 <div class="image-col">
+                   <div class="image-label">Coronal (Full)</div>
+                   <img src="${imgCor}" />
+                 </div>
+                 <div class="image-col">
+                   <div class="image-label">Axial (Full)</div>
+                   <img src="${imgAx}" />
+                 </div>
+              </div>
+              
             </div>
-            
-            <!-- Zoomed Row -->
-            <div class="image-grid">
-               <div class="image-col">
-                 <div class="image-label">Sagittal (Zoom)</div>
-                 <img src="${imgSagZ}" />
-               </div>
-               <div class="image-col">
-                 <div class="image-label">Coronal (Zoom)</div>
-                 <img src="${imgCorZ}" />
-               </div>
-               <div class="image-col">
-                 <div class="image-label">Axial (Zoom)</div>
-                 <img src="${imgAxZ}" />
-               </div>
-            </div>
-            
-            <!-- Full Row -->
-            <div class="image-grid">
-               <div class="image-col">
-                 <div class="image-label">Sagittal (Full)</div>
-                 <img src="${imgSag}" />
-               </div>
-               <div class="image-col">
-                 <div class="image-label">Coronal (Full)</div>
-                 <img src="${imgCor}" />
-               </div>
-               <div class="image-col">
-                 <div class="image-label">Axial (Full)</div>
-                 <img src="${imgAx}" />
-               </div>
-            </div>
-            
-          </div>
-        `;
+          `;
+      }
     }
 
     reportHTML += '</body></html>';
 
     // Open report
     const reportWindow = window.open('', '_blank');
-    reportWindow.document.write(reportHTML);
-    reportWindow.document.close();
+    if (reportWindow) {
+      reportWindow.document.write(reportHTML);
+      reportWindow.document.close();
+    } else {
+      alert("Pop-up blocked! Please allow pop-ups.");
+    }
 
     setLoading(false);
   };
