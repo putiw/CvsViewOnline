@@ -31,6 +31,7 @@ export default function SliceViewer({
     }
 
     useEffect(() => {
+        console.log(`[SliceViewer ${axis}] Rendering with currentLesionLabel=${currentLesionLabel}`);
         const canvas = canvasRef.current;
         if (!canvas || !volumes[modality]) return;
 
@@ -150,8 +151,13 @@ export default function SliceViewer({
 
                     if (isEdge) {
                         // Check if this pixel belongs to the current lesion
-                        const lesionLabel = Math.round(lesionData[idx]);
+                        const lesionLabel = currentLabel; // Use the label we already computed
                         const isCurrentLesion = currentLesionLabel && lesionLabel === currentLesionLabel;
+
+                        // Debug logging (once per render)
+                        if (sourceI === Math.floor(renderWidth / 2) && sourceJ === Math.floor(renderHeight / 2)) {
+                            console.log(`[${axis}] Lesion ${lesionLabel}, Current: ${currentLesionLabel}, isCurrentLesion: ${isCurrentLesion}`);
+                        }
 
                         // Green (#00ff00) for current lesion, Blue (#60a5fa) for others
                         if (isCurrentLesion) {
