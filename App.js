@@ -264,29 +264,35 @@ export default function App() {
       <head>
         <title>CvsView Report</title>
         <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #121212; color: #e0e0e0; font-size: 16px; }
-          h1 { color: #60a5fa; border-bottom: 2px solid #333; padding-bottom: 15px; font-size: 28px; }
-          h2 { color: #93c5fd; margin-top: 40px; font-size: 22px; }
-          .stats { background: #1e1e1e; padding: 25px; border-radius: 8px; border: 1px solid #333; font-size: 18px; margin-bottom: 30px; }
-          .stats p { margin: 10px 0; }
-          .lesion { margin-bottom: 50px; background: #000; padding: 25px; border-radius: 12px; border: 1px solid #333; page-break-inside: avoid; }
-          .lesion-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
-          .lesion-title { font-size: 1.4em; font-weight: bold; color: #60a5fa; }
-          .lesion-meta { color: #aaa; font-size: 1.1em; }
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #121212; color: #e0e0e0; font-size: 18px; }
+          h1 { color: #60a5fa; border-bottom: 2px solid #333; padding-bottom: 20px; font-size: 32px; margin-bottom: 40px; }
+          h2 { color: #93c5fd; margin-top: 50px; font-size: 26px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+          .stats { background: #1e1e1e; padding: 30px; border-radius: 12px; border: 1px solid #333; font-size: 20px; margin-bottom: 40px; }
+          .stats p { margin: 12px 0; }
+          .lesion { margin-bottom: 60px; background: #000; padding: 30px; border-radius: 16px; border: 1px solid #333; page-break-inside: avoid; }
+          .lesion-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 25px; }
+          .lesion-title { font-size: 1.6em; font-weight: bold; color: #60a5fa; }
+          .lesion-meta { color: #aaa; font-size: 1.2em; }
           
-          /* Grid Layout for Images */
-          .image-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-          .image-col { display: flex; flex-direction: column; gap: 8px; align-items: center; }
-          .image-label { text-align: center; font-size: 1em; color: #ccc; background: #222; padding: 6px 12px; border-radius: 4px; width: 100%; box-sizing: border-box; }
+          /* Flex Layout to remove blank space between images */
+          .image-grid { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; flex-wrap: wrap; }
+          .image-col { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+          .image-label { text-align: center; font-size: 1.1em; color: #ccc; background: #222; padding: 8px 16px; border-radius: 6px; width: 100%; box-sizing: border-box; }
           
-          /* Image Constraint matches Main App "Viewer" feel */
+          /* Larger Images to fill the screen */
           img { 
-            width: 100%; 
-            height: 250px; /* Constrain Height */
-            object-fit: contain; /* Letterbox to preserve aspect ratio without exploding height */
+            display: block;
+            max-width: 100%;
+            height: 450px; /* Much larger height */
+            object-fit: contain; 
             background: #050505; 
             border: 1px solid #444; 
           }
+          
+          /* Specific styling for Zoomed vs Full if needed, but height constraint works well for both */
+          .zoom-row img { height: 350px; } /* Square zooms can be slightly smaller to save vertical space */
+          .full-row img { height: 500px; } /* Full views get maximum height */
+
         </style>
       </head>
       <body>
@@ -369,7 +375,7 @@ export default function App() {
               </div>
               
               <!-- Zoomed Row -->
-              <div class="image-grid">
+              <div class="image-grid zoom-row">
                  <div class="image-col">
                    <div class="image-label">Sagittal (Zoom)</div>
                    <img src="${imgSagZ}" />
@@ -385,7 +391,7 @@ export default function App() {
               </div>
               
               <!-- Full Row -->
-              <div class="image-grid">
+              <div class="image-grid full-row">
                  <div class="image-col">
                    <div class="image-label">Sagittal (Full)</div>
                    <img src="${imgSag}" />
