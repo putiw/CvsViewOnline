@@ -114,6 +114,11 @@ export default function SliceViewer({
         const wMax = windowMax !== undefined ? windowMax : 1000;
         const range = wMax - wMin || 1;
 
+        // Track labels and colors for debugging
+        const labelsFound = new Set();
+        let greenCount = 0;
+        let blueCount = 0;
+
         for (let j = 0; j < renderHeight; j++) {
             for (let i = 0; i < renderWidth; i++) {
                 const sourceI = startI + i;
@@ -136,6 +141,8 @@ export default function SliceViewer({
 
                 if (showMask && lesionData && lesionData[idx] > 0.5) {
                     const currentLabel = Math.round(lesionData[idx]);
+                    labelsFound.add(currentLabel);
+
                     let isEdge = false;
 
                     if (sourceI === 0 || sourceI === fullWidth - 1 || jFlip === 0 || jFlip === fullHeight - 1) {
@@ -151,23 +158,20 @@ export default function SliceViewer({
 
                     if (isEdge) {
                         // Check if this pixel belongs to the current lesion
-                        const lesionLabel = currentLabel; // Use the label we already computed
+                        const lesionLabel = currentLabel;
                         const isCurrentLesion = currentLesionLabel && lesionLabel === currentLesionLabel;
-
-                        // Debug logging (once per render)
-                        if (sourceI === Math.floor(renderWidth / 2) && sourceJ === Math.floor(renderHeight / 2)) {
-                            console.log(`[${axis}] Lesion ${lesionLabel}, Current: ${currentLesionLabel}, isCurrentLesion: ${isCurrentLesion}`);
-                        }
 
                         // Green (#00ff00) for current lesion, Blue (#60a5fa) for others
                         if (isCurrentLesion) {
                             data[pxIdx] = 0;
                             data[pxIdx + 1] = 255;
                             data[pxIdx + 2] = 0;
+                            greenCount++;
                         } else {
                             data[pxIdx] = 96;   // #60a5fa
                             data[pxIdx + 1] = 165;
                             data[pxIdx + 2] = 250;
+                            blueCount++;
                         }
                         data[pxIdx + 3] = 255;
                     }
@@ -176,6 +180,11 @@ export default function SliceViewer({
         }
 
         ctx.putImageData(imgData, 0, 0);
+
+        // Log summary
+        if (labelsFound.size > 0) {
+            console.log(`[${axis}] Labels in view: [${Array.from(labelsFound).sort().join(', ')}], Current: ${currentLesionLabel}, Green pixels: ${greenCount}, Blue pixels: ${blueCount}`);
+        }
 
         // Draw Cursor (only on bottom row)
         if (cursor === 'crosshair') {
