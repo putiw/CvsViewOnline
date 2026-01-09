@@ -146,7 +146,7 @@ export default function App() {
         phase: rawPhase, // Raw!
         swi: normSwi,
         flair: normFlair,
-        lesion: vLesion.img
+        lesion: vLesion.data
       });
       const phasePerc = vPhase ? calculateContrastPercentiles(vPhase.data, 0.01, 0.9999) : { min: -1.5, max: 1.96 };
       console.log(`Percentile calculation took ${(performance.now() - t1).toFixed(0)}ms`);

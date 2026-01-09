@@ -6,7 +6,7 @@ export const findConnectedComponents = (data, dims) => {
     const size = width * height * depth;
     const labels = new Int32Array(size); // 0 = background
     let nextLabel = 1;
-    const parent = [];
+    const parent = new Int32Array(size); // Pre-allocate for Union-Find efficiency
 
     // Union-Find Operations
     const find = (i) => {
