@@ -45,6 +45,14 @@ export default function App() {
     phase: { min: -1.5, max: 1.96 },
   });
 
+  // Slider Limits (Min/Max range of the slider itself)
+  const [contrastLimits, setContrastLimits] = useState({
+    flairStar: { min: -5, max: 10 },
+    swi: { min: -5, max: 10 },
+    flair: { min: -5, max: 10 },
+    phase: { min: -3142, max: 3142 }, // Raw Phase can be large
+  });
+
   const [veinLikelihood, setVeinLikelihood] = useState(0);
 
   // Helper to get current contrast
@@ -140,7 +148,6 @@ export default function App() {
       console.log("Lesion Mask:", vLesion.dims);
       console.log("PixDims from Header:", vFlairStar.header.pixDims ? vFlairStar.header.pixDims.slice(1, 4) : 'N/A');
 
-      // Store volumes
       setVolumes({
         flairStar: normFlairStar,
         phase: rawPhase, // Raw!
@@ -148,25 +155,41 @@ export default function App() {
         flair: normFlair,
         lesion: vLesion.data
       });
-      const phasePerc = vPhase ? calculateContrastPercentiles(vPhase.data, 0.01, 0.9999) : { min: -1.5, max: 1.96 };
-      console.log(`Percentile calculation took ${(performance.now() - t1).toFixed(0)}ms`);
+
+      // Calculate Percentiles for Defaults and Slider Limits
+      // Slider Limits: 0.01% to 99.99% (Full Range)
+      const getLimits = (data) => calculateContrastPercentiles(data, 0.01, 99.99);
+
+      const limFlairStar = getLimits(normFlairStar);
+      const limSwi = vSwi ? getLimits(normSwi) : { min: -5, max: 10 };
+      const limFlair = vFlair ? getLimits(normFlair) : { min: -5, max: 10 };
+      const limPhase = vPhase ? getLimits(vPhase.data) : { min: -1000, max: 1000 };
+
+      // Set Slider Limits
+      setContrastLimits({
+        flairStar: limFlairStar,
+        swi: limSwi,
+        flair: limFlair,
+        phase: limPhase
+      });
+
+      // Calculate Defaults (1% to 99.9% usually, but Phase is fixed)
+      const getDef = (data) => calculateContrastPercentiles(data, 1, 99.9);
+      const defFlairStar = getDef(normFlairStar);
+      const defSwi = vSwi ? getDef(normSwi) : { min: -1.5, max: 1.96 };
+      const defFlair = vFlair ? getDef(normFlair) : { min: -1.5, max: 1.96 };
+      // Phase Default: Fixed -500 to 500
+      const defPhase = { min: -500, max: 500 };
 
       // Set contrast defaults
       setContrastSettings({
-        flairStar: flairStarPerc,
-        swi: swiPerc,
-        flair: flairPerc,
-        phase: phasePerc,
+        flairStar: defFlairStar,
+        swi: defSwi,
+        flair: defFlair,
+        phase: defPhase,
       });
 
-      // Store volumes
-      setVolumes({
-        flairStar: vFlairStar.img,
-        phase: vPhase.img,
-        swi: vSwi.img,
-        flair: vFlair.img,
-        lesion: vLesion.img
-      });
+      // Removed duplicate setVolumes call that was overwriting data with undefined/incorrect values
 
       setDims(vFlairStar.dims);
       setPixDims(vFlairStar.pixDims); // Save pixDims
@@ -547,9 +570,9 @@ export default function App() {
                     setWindowMin(vals[0]);
                     setWindowMax(vals[1]);
                   }}
-                  min={-5}
-                  max={10}
-                  step={0.1}
+                  min={contrastLimits[modality]?.min ?? -5}
+                  max={contrastLimits[modality]?.max ?? 10}
+                  step={modality === 'phase' ? 1 : 0.1} // Coarser step for Phase
                   sliderLength={280}
                   selectedStyle={{ backgroundColor: '#3b82f6' }}
                   unselectedStyle={{ backgroundColor: '#ffffff20' }}
