@@ -21,6 +21,7 @@ export default function DataLoadModal({ visible, onClose, onLoadData }) {
     const [viewMode, setViewMode] = useState('initial'); // 'initial', 'subjectList', 'manual'
 
     const [loadingMsg, setLoadingMsg] = useState("");
+    const [progress, setProgress] = useState(0);
 
     // For manual file inputs
     const fileInputRefs = {
@@ -117,13 +118,40 @@ export default function DataLoadModal({ visible, onClose, onLoadData }) {
     };
 
     const handleLoadClick = async () => {
-        setLoadingMsg("Reading files...");
+        // Stats
+        let totalBytes = 0;
+        let loadedBytes = 0;
+        const startTime = performance.now();
+        setProgress(0);
 
-        // Helper to read file as ArrayBuffer
+        // Files to load
+        const filesToLoad = [];
+        if (files.flairStar) filesToLoad.push(files.flairStar);
+        if (files.lesion) filesToLoad.push(files.lesion);
+        if (files.swi) filesToLoad.push(files.swi);
+        if (files.flair) filesToLoad.push(files.flair);
+        if (files.phase) filesToLoad.push(files.phase);
+
+        totalBytes = filesToLoad.reduce((acc, f) => acc + f.size, 0);
+
+        setLoadingMsg(`Starting load... (0/${filesToLoad.length})`);
+
+        // Helper to read file as ArrayBuffer with progress update
         const readFile = (file) => {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
+                reader.onload = () => {
+                    loadedBytes += file.size;
+                    const elapsed = (performance.now() - startTime) / 1000; // seconds
+                    const speed = (loadedBytes / 1024 / 1024) / elapsed; // MB/s
+                    const percent = Math.round((loadedBytes / totalBytes) * 100);
+                    setProgress(percent);
+                    const remainingBytes = totalBytes - loadedBytes;
+                    const eta = speed > 0 ? (remainingBytes / 1024 / 1024) / speed : 0;
+
+                    setLoadingMsg(`Loading ${file.name}...\n${percent}% (${speed.toFixed(1)} MB/s) - ETA: ${eta.toFixed(0)}s`);
+                    resolve(reader.result);
+                };
                 reader.onerror = reject;
                 reader.readAsArrayBuffer(file);
             });
@@ -139,14 +167,15 @@ export default function DataLoadModal({ visible, onClose, onLoadData }) {
                 return;
             }
 
-            // Load all present files
+            // Load sequentially to track progress accurately (Parallel makes progress jumpy)
             if (files.flairStar) buffers.flairStar = await readFile(files.flairStar);
             if (files.lesion) buffers.lesion = await readFile(files.lesion);
             if (files.swi) buffers.swi = await readFile(files.swi);
             if (files.flair) buffers.flair = await readFile(files.flair);
             if (files.phase) buffers.phase = await readFile(files.phase);
 
-            setLoadingMsg("Processing...");
+            setLoadingMsg("Processing volume data...");
+            setProgress(100);
             // Pass buffers back to App
             await onLoadData(buffers);
             onClose(); // Close modal on success
@@ -302,7 +331,15 @@ export default function DataLoadModal({ visible, onClose, onLoadData }) {
                     )}
 
                     {loadingMsg ? (
-                        <Text className="text-yellow-400 mt-4 text-center">{loadingMsg}</Text>
+                        <View className="mt-4">
+                            <Text className="text-white text-center mb-2 font-mono whitespace-pre-wrap">{loadingMsg}</Text>
+                            <View className="h-2 bg-white/10 rounded-full overflow-hidden">
+                                <View
+                                    className="h-full bg-blue-500 transition-all duration-300"
+                                    style={{ width: `${progress}%` }}
+                                />
+                            </View>
+                        </View>
                     ) : null}
 
                 </ScrollView>

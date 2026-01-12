@@ -660,7 +660,7 @@ export default function App() {
             <View className="flex-row items-center justify-between mb-2 bg-black/20 p-2 rounded">
               <TouchableOpacity onPress={handlePrevLesion} className="bg-white/10 p-2 rounded w-10 items-center"><Text className="text-white font-bold">{"<"}</Text></TouchableOpacity>
               <Text className="text-white font-mono text-lg">
-                {lesions.length > 0 ? `${lesionIndex + 1} / ${lesions.length}` : "0 / 0"}
+                {(lesions.length > 0) ? (lesionIndex + 1) + " / " + lesions.length : "0 / 0"}
               </Text>
               <TouchableOpacity onPress={handleNextLesion} className="bg-white/10 p-2 rounded w-10 items-center"><Text className="text-white font-bold">{">"}</Text></TouchableOpacity>
             </View>
