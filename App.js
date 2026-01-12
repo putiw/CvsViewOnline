@@ -296,48 +296,50 @@ export default function App() {
          <style>
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-          body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 40px; }
+          body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #0f172a; color: #f1f5f9; margin: 0; padding: 40px; }
           
-          .container { max-width: 900px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+          .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5); border: 1px solid #334155; }
 
           @media print {
-            body { background: white; padding: 0; }
-            .container { box-shadow: none; max-width: none; padding: 20px; }
+            body { background: white; color: black; padding: 0; }
+            .container { box-shadow: none; max-width: none; padding: 20px; background: white; border: none; }
             .no-print { display: none !important; }
-            .lesion { break-inside: avoid; page-break-inside: avoid; }
+            .lesion { break-inside: avoid; page-break-inside: avoid; border: 1px solid #ccc !important; }
+            h1, h2, .stat-label, .stat-value, .lesion-title { color: black !important; }
+            .stats-card { background: white !important; border: 1px solid #ccc !important; }
+            .stat-item { border-bottom: 1px solid #eee !important; }
+            .img-card { background: white !important; border: 1px solid #ccc !important; }
           }
           
-          h1 { color: #0f172a; font-size: 30px; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; letter-spacing: -0.5px; }
-          h2 { color: #334155; font-size: 20px; font-weight: 600; margin-top: 40px; margin-bottom: 15px; }
+          h1 { color: #f8fafc; font-size: 30px; font-weight: 700; border-bottom: 2px solid #334155; padding-bottom: 20px; margin-bottom: 30px; letter-spacing: -0.5px; }
+          h2 { color: #e2e8f0; font-size: 20px; font-weight: 600; margin-top: 40px; margin-bottom: 15px; }
           
-          .stats-card { background: #f1f5f9; border-radius: 8px; padding: 24px; border: 1px solid #e2e8f0; margin-bottom: 30px; }
+          .stats-card { background: #0f172a; border-radius: 8px; padding: 24px; border: 1px solid #334155; margin-bottom: 30px; }
           .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
-          .stat-item { display: flex; justify-content: space-between; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; }
-          .stat-label { color: #64748b; font-weight: 500; }
-          .stat-value { color: #0f172a; font-weight: 600; }
-          .file-info { font-size: 13px; color: #64748b; font-family: monospace; word-break: break-all; margin-top: 12px; background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; }
+          .stat-item { display: flex; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
+          .stat-label { color: #94a3b8; font-weight: 500; }
+          .stat-value { color: #f1f5f9; font-weight: 600; }
 
-          .lesion { margin-bottom: 50px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; background: #fff; }
-          .lesion-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #f1f5f9; }
-          .lesion-title { font-size: 22px; font-weight: 700; color: #2563eb; }
-          .lesion-score { font-size: 18px; font-weight: 700; color: #059669; background: #d1fae5; padding: 4px 12px; rounded: 9999px; border-radius: 20px; }
-          .lesion-meta { font-size: 14px; color: #64748b; margin-top: 4px; }
+          .lesion { margin-bottom: 50px; border: 1px solid #334155; border-radius: 8px; padding: 24px; background: #0f172a; }
+          .lesion-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #1e293b; }
+          .lesion-title { font-size: 22px; font-weight: 700; color: #60a5fa; }
+          .lesion-score { font-size: 18px; font-weight: 700; color: #4ade80; background: rgba(74, 222, 128, 0.1); padding: 4px 12px; rounded: 9999px; border-radius: 20px; }
+          .lesion-meta { font-size: 14px; color: #94a3b8; margin-top: 4px; }
 
           .image-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
           .grid-column { display: flex; flex-direction: column; gap: 8px; }
           
           .axis-label { text-align: center; font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
 
-          .img-card { border: 1px solid #e2e8f0; padding: 4px; background: #fff; border-radius: 6px; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
+          .img-card { border: 1px solid #1e293b; padding: 4px; background: #000; border-radius: 6px; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.2); }
           .img-card img { width: 100%; height: auto; display: block; border-radius: 2px; }
-          .img-meta { font-size: 11px; color: #94a3b8; margin-top: 4px; text-align: center; font-family: sans-serif; }
+          .img-meta { font-size: 11px; color: #64748b; margin-top: 4px; text-align: center; font-family: sans-serif; }
 
-          .row-title { font-size: 12px; font-weight: 700; color: #475569; margin: 16px 0 8px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
-          .row-title::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+          .row-title { font-size: 12px; font-weight: 700; color: #94a3b8; margin: 16px 0 8px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+          .row-title::after { content: ''; flex: 1; height: 1px; background: #334155; }
 
           .btn { display: inline-block; padding: 10px 20px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 14px; cursor: pointer; border: none; transition: opacity 0.2s; }
-          .btn-primary { background: #2563eb; color: white; }
-          .btn-success { background: #10b981; color: white; margin-left: 10px; }
+          .btn-primary { background: #3b82f6; color: white; }
           .btn:hover { opacity: 0.9; }
         </style>
       </head>
@@ -345,7 +347,6 @@ export default function App() {
         <div class="container">
             <div class="no-print" style="margin-bottom: 30px;">
                <a href="${textReportUri}" download="cvsview_report.txt" class="btn btn-primary">Download Text Report</a>
-               <button onclick="window.print()" class="btn btn-success">Print / Save PDF</button>
             </div>
 
             <h1>CvsView Session Report</h1>
@@ -357,7 +358,6 @@ export default function App() {
                  <div class="stat-item"><span class="stat-label">CVS+ Lesions</span> <span class="stat-value">${validLesionsCount}</span></div>
                  <div class="stat-item"><span class="stat-label">PRL+ Lesions</span> <span class="stat-value">${prlLesionsCount}</span></div>
               </div>
-              <div class="file-info">File: ${fileMetadata.flairStarPath || 'N/A'}</div>
             </div>
 
             <h2>Lesion Analysis</h2>
@@ -448,7 +448,7 @@ export default function App() {
             <div class="lesion">
               <div class="lesion-header">
                 <div>
-                    <div class="lesion-title">${modTitle} Analysis <span style="font-size:16px; color:#64748b; font-weight:400;">Lesion ${lesionIdx + 1}</span></div>
+                    <div class="lesion-title">${modTitle} Analysis <span style="font-size:16px; color:#94a3b8; font-weight:400;">Lesion ${lesionIdx + 1}</span></div>
                     <div class="lesion-meta">${contextStr}</div>
                 </div>
                 <div style="text-align: right;">
