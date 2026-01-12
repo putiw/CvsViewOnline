@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @layer base {
-    body {
-        zoom: 0.8;
+    html {
+        font-size: 80%;
     }
 }

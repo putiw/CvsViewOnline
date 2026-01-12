@@ -660,7 +660,7 @@ export default function App() {
                   min={contrastLimits[modality]?.min ?? -5}
                   max={contrastLimits[modality]?.max ?? 10}
                   step={modality === 'phase' ? 1 : 0.1} // Coarser step for Phase
-                  sliderLength={280}
+                  sliderLength={220}
                   selectedStyle={{ backgroundColor: '#3b82f6' }}
                   unselectedStyle={{ backgroundColor: '#ffffff20' }}
                   markerStyle={{ backgroundColor: '#ffffff', height: 20, width: 20 }}
