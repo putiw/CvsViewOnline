@@ -12,13 +12,14 @@ import MultiSlider from '@ptomasroos/react-native-multi-slider';
 import DataLoadModal from './components/DataLoadModal';
 import "./global.css"
 // Mapping for sample filenames using require for Metro bundling
-const SAMPLE_FILES = {
-  flairStar: require('./assets/sample_data/sub-dimah_ses-01_space-swi_FLAIRSTAR.nii.gz'),
-  swi: require('./assets/sample_data/sub-dimah_ses-01_swi.nii.gz'),
-  flair: require('./assets/sample_data/sub-dimah_ses-01_space-swi_FLAIR.nii.gz'),
-  phase: require('./assets/sample_data/sub-dimah_ses-01_part-phase_swi.nii.gz'),
-  lesion: require('./assets/sample_data/sub-dimah_ses-01_space-swi_desc-lesion_mask.nii.gz'),
-};
+// Mapping for sample filenames using require for Metro bundling - DISABLED
+// const SAMPLE_FILES = {
+//   flairStar: require('./assets/sample_data/sub-dimah_ses-01_space-swi_FLAIRSTAR.nii.gz'),
+//   swi: require('./assets/sample_data/sub-dimah_ses-01_swi.nii.gz'),
+//   flair: require('./assets/sample_data/sub-dimah_ses-01_space-swi_FLAIR.nii.gz'),
+//   phase: require('./assets/sample_data/sub-dimah_ses-01_part-phase_swi.nii.gz'),
+//   lesion: require('./assets/sample_data/sub-dimah_ses-01_space-swi_desc-lesion_mask.nii.gz'),
+// };
 
 export default function App() {
   const [loading, setLoading] = useState(false);
@@ -100,113 +101,7 @@ export default function App() {
   }, [lesionIndex, lesions, modality]);
 
   const loadData = async () => {
-    setLoading(true);
-    try {
-      const load = async (source) => {
-        const asset = Asset.fromModule(source);
-        await asset.downloadAsync();
-        const response = await fetch(asset.uri);
-        const buffer = await response.arrayBuffer();
-        return loadNifti(buffer);
-      };
-
-      // Load all in parallel
-      const [vFlairStar, vSwi, vFlair, vPhase, vLesion] = await Promise.all([
-        load(SAMPLE_FILES.flairStar),
-        load(SAMPLE_FILES.swi),
-        load(SAMPLE_FILES.flair),
-        load(SAMPLE_FILES.phase),
-        load(SAMPLE_FILES.lesion),
-      ]);
-
-      if (!vFlairStar || !vLesion) throw new Error("Failed to load core files");
-
-      // Parse header dimensions (NIfTI dims start at index 1)
-      if (vFlairStar.header) {
-        setDims(vFlairStar.header.dims.slice(1, 4));
-        setPixDims(vFlairStar.header.pixDims.slice(1, 4));
-      }
-
-      // 3. Process Volumes
-      // Z-Normalize everything EXCEPT Phase (User request)
-      const t0 = performance.now();
-      const normFlairStar = zNormalize(vFlairStar.data);
-      const normSwi = vSwi ? zNormalize(vSwi.data) : null;
-      const normFlair = vFlair ? zNormalize(vFlair.data) : null;
-      // Phase kept raw for specific fixed-range viewing (-500 to 500)
-      const rawPhase = vPhase ? vPhase.data : null;
-      console.log(`Normalization took ${(performance.now() - t0).toFixed(0)}ms`);
-
-      // Calculate percentiles
-      // FlairStar etc: 1% to 99.9% of NORMALIZED data
-      const t1 = performance.now();
-      // Calculate Default Contrast Ranges (Visual Defaults)
-      // Tighter range (2% - 99.5%) to avoid outliers making the image look gray/flat
-      const flairStarPerc = calculateContrastPercentiles(normFlairStar, 2.0, 99.5);
-      const swiPerc = vSwi ? calculateContrastPercentiles(normSwi, 2.0, 99.5) : { min: -1.5, max: 1.96 };
-      const flairPerc = vFlair ? calculateContrastPercentiles(normFlair, 2.0, 99.5) : { min: -1.5, max: 1.96 };
-      // Phase: No percentiles needed? User said -500 to 500. 
-      // But we can calculate just in case, or skip. Skip to save time.
-
-      console.log(`Percentile calculation took ${(performance.now() - t1).toFixed(0)}ms`);
-
-      console.log("Lesion Mask:", vLesion.dims);
-      console.log("PixDims from Header:", vFlairStar.header.pixDims ? vFlairStar.header.pixDims.slice(1, 4) : 'N/A');
-
-      // Analyze Lesions FIRST to get labeled mask
-      console.log("Analyzing lesions...");
-      const analysis = findConnectedComponents(vLesion.data, vFlairStar.dims);
-      setLesions(analysis.lesions);
-
-      setVolumes({
-        flairStar: normFlairStar,
-        phase: rawPhase, // Raw!
-        swi: normSwi,
-        flair: normFlair,
-        lesion: analysis.labeledMask // Use the LABELED mask!
-      });
-
-      // Restore Contrast Settings
-      // 1. Slider Limits (Wide range: 0.01% - 99.99%)
-      const getLimits = (data) => calculateContrastPercentiles(data, 0.01, 99.99);
-      const limFlairStar = getLimits(normFlairStar);
-      const limSwi = vSwi ? getLimits(normSwi) : { min: -5, max: 10 };
-      const limFlair = vFlair ? getLimits(normFlair) : { min: -5, max: 10 };
-      const limPhase = vPhase ? getLimits(vPhase.data) : { min: -1000, max: 1000 };
-
-      setContrastLimits({
-        flairStar: limFlairStar,
-        swi: limSwi,
-        flair: limFlair,
-        phase: limPhase
-      });
-
-      // 2. Default View Settings (Optimized range: 2.0% - 99.5% calculated above)
-      setContrastSettings({
-        flairStar: flairStarPerc,
-        swi: swiPerc,
-        flair: flairPerc,
-        phase: { min: -500, max: 500 }
-      });
-
-      // Set initial state
-      if (analysis.lesions.length > 0) {
-        const first = analysis.lesions[0];
-        setCoords({ x: first.x, y: first.y, z: first.z });
-      } else {
-        setCoords({
-          x: Math.floor(vFlairStar.dims[0] / 2),
-          y: Math.floor(vFlairStar.dims[1] / 2),
-          z: Math.floor(vFlairStar.dims[2] / 2)
-        });
-      }
-
-    } catch (e) {
-      console.error(e);
-      alert("Error loading BIDS data: " + e.message);
-    } finally {
-      setLoading(false);
-    }
+    alert("Sample data has been disabled. Please use 'Load Data' to upload your own files.");
   };
 
   const handleUpdateCoords = (newCoordsFunc) => {
@@ -579,19 +474,14 @@ export default function App() {
           <Text className="text-white text-xl font-bold">Load Data</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={loadData}
-          className="bg-white/10 px-6 py-3 rounded-lg active:bg-white/20"
-        >
-          <Text className="text-white font-bold">Load Sample BIDS (Demo)</Text>
-        </TouchableOpacity>
+
 
         <DataLoadModal
           visible={showLoadModal}
           onClose={() => setShowLoadModal(false)}
           onLoadData={handleDataLoad}
         />
-        <Text className="text-text-muted mt-4">Loads sub-dimah data</Text>
+
       </View>
     );
   }
