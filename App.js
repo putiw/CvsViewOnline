@@ -280,7 +280,7 @@ export default function App() {
       await new Promise(r => setTimeout(r, 20));
 
       console.log("Analyzing new lesions...");
-      const analysis = findConnectedComponents(vLesion.data, vFlairStar.dims);
+      const analysis = await findConnectedComponents(vLesion.data, vFlairStar.dims, updateStatus);
       setLesions(analysis.lesions);
 
       updateStatus("Finalizing...");

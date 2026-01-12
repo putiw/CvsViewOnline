@@ -1,7 +1,7 @@
 // Iterative Union-Find based Connected Component Labeling (3D)
 // Connectivity = 26 (includes diagonals)
 
-export const findConnectedComponents = (data, dims) => {
+export const findConnectedComponents = async (data, dims, onProgress = () => { }) => {
     const [width, height, depth] = dims;
     const size = width * height * depth;
     const labels = new Int32Array(size); // 0 = background
@@ -40,6 +40,12 @@ export const findConnectedComponents = (data, dims) => {
 
     // Pass 1: Assign provisional labels
     for (let z = 0; z < depth; z++) {
+        // Yield to UI every few slices
+        if (z % 5 === 0) {
+            onProgress(`Analyzing Lesions (Pass 1/2): Slice ${z}/${depth}`);
+            await new Promise(r => setTimeout(r, 0));
+        }
+
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const idx = getIndex(x, y, z);
@@ -79,6 +85,9 @@ export const findConnectedComponents = (data, dims) => {
     }
 
     // Pass 2: Resolve labels
+    onProgress("Analyzing Lesions (Resolving Labels)...");
+    await new Promise(r => setTimeout(r, 0));
+
     const labelMap = new Map();
     let finalLabelCount = 0;
 
@@ -93,29 +102,40 @@ export const findConnectedComponents = (data, dims) => {
     // Calculate centroids and re-write final labels
     const centroids = new Map(); // label -> {xSum, ySum, zSum, count}
 
-    for (let i = 0; i < size; i++) {
-        if (labels[i] > 0) {
-            const root = find(labels[i]);
-            if (labelMap.has(root)) { // Should always be true
-                const finalLabel = labelMap.get(root);
-                labels[i] = finalLabel;
+    // Chunked processing for massive array
+    const CHUNK_SIZE = 100000; // Process 100k voxels at a time
+    for (let i = 0; i < size; i += CHUNK_SIZE) {
+        if (i % (CHUNK_SIZE * 5) === 0) {
+            const pct = Math.round((i / size) * 100);
+            onProgress(`Analyzing Lesions (Pass 2/2): ${pct}%`);
+            await new Promise(r => setTimeout(r, 0));
+        }
 
-                // Accumulate for centroid
-                let z = Math.floor(i / (width * height));
-                let rem = i % (width * height);
-                let y = Math.floor(rem / width);
-                let x = rem % width;
+        const end = Math.min(i + CHUNK_SIZE, size);
+        for (let j = i; j < end; j++) {
+            if (labels[j] > 0) {
+                const root = find(labels[j]);
+                if (labelMap.has(root)) { // Should always be true
+                    const finalLabel = labelMap.get(root);
+                    labels[j] = finalLabel;
 
-                if (!centroids.has(finalLabel)) {
-                    centroids.set(finalLabel, { x: 0, y: 0, z: 0, count: 0 });
+                    // Accumulate for centroid
+                    let z = Math.floor(j / (width * height));
+                    let rem = j % (width * height);
+                    let y = Math.floor(rem / width);
+                    let x = rem % width;
+
+                    if (!centroids.has(finalLabel)) {
+                        centroids.set(finalLabel, { x: 0, y: 0, z: 0, count: 0 });
+                    }
+                    const c = centroids.get(finalLabel);
+                    c.x += x;
+                    c.y += y;
+                    c.z += z;
+                    c.count++;
+                } else {
+                    labels[j] = 0; // Should not happen
                 }
-                const c = centroids.get(finalLabel);
-                c.x += x;
-                c.y += y;
-                c.z += z;
-                c.count++;
-            } else {
-                labels[i] = 0; // Should not happen
             }
         }
     }
