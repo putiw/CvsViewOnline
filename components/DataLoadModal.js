@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Platform, Image, Modal } from 'react-native';
 // Note: We use standard HTML input elements for file picking in web
 // This component should be conditionally rendered only on Web or handling Platform.OS check internally
 
@@ -22,6 +22,7 @@ export default function DataLoadModal({ visible, onClose, onLoadData }) {
 
     const [loadingMsg, setLoadingMsg] = useState("");
     const [progress, setProgress] = useState(0);
+    const [showHelp, setShowHelp] = useState(false);
 
     // For manual file inputs
     const fileInputRefs = {
@@ -297,7 +298,30 @@ export default function DataLoadModal({ visible, onClose, onLoadData }) {
                                     directory=""
                                     onChange={handleDirectoryScan}
                                 />
+                                <TouchableOpacity
+                                    onPress={() => setShowHelp(true)}
+                                    className="mt-4"
+                                >
+                                    <Text className="text-blue-400 underline text-xs text-center">View Example Folder Structure</Text>
+                                </TouchableOpacity>
                             </View>
+
+                            <Modal visible={showHelp} transparent animationType="fade">
+                                <View className="flex-1 bg-black/90 items-center justify-center p-8">
+                                    <View className="bg-white p-2 rounded-lg relative">
+                                        <TouchableOpacity
+                                            onPress={() => setShowHelp(false)}
+                                            className="absolute -top-12 right-0 bg-white/10 p-2 rounded-full"
+                                        >
+                                            <Text className="text-white font-bold text-xl">Close ✕</Text>
+                                        </TouchableOpacity>
+                                        <Image
+                                            source={require('../assets/exampleDataStructure.png')}
+                                            style={{ width: 800, height: 600, resizeMode: 'contain' }}
+                                        />
+                                    </View>
+                                </View>
+                            </Modal>
 
                             {/* Divider */}
                             <View className="flex-row items-center mb-6">
