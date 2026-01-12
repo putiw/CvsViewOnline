@@ -38,7 +38,7 @@ export default function App() {
   // Coordinates (voxel space)
   const [coords, setCoords] = useState({ x: 0, y: 0, z: 0 });
   const [lesionCoords, setLesionCoords] = useState({}); // Persistence: { index: {x,y,z} }
-  const [zoom, setZoom] = useState(5.1); // Set default zoom to middle of range (0.2 - 10)
+  const [zoom, setZoom] = useState(1.7); // Set default zoom to level 3 (approx 1.7)
 
   // Contrast Settings (Per Modality)
   const [contrastSettings, setContrastSettings] = useState({
@@ -576,7 +576,7 @@ export default function App() {
           onPress={() => setShowLoadModal(true)}
           className="bg-primary px-8 py-4 rounded-lg active:opacity-80 mb-4"
         >
-          <Text className="text-white text-xl font-bold">📂 Load Data</Text>
+          <Text className="text-white text-xl font-bold">Load Data</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -620,7 +620,7 @@ export default function App() {
             onPress={() => setShowLoadModal(true)}
             className="bg-primary px-4 py-2 rounded-lg active:opacity-80"
           >
-            <Text className="text-white font-bold">📂 Load Data</Text>
+            <Text className="text-white font-bold">Load Data</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
