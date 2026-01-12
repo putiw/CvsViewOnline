@@ -452,12 +452,15 @@ export default function App() {
 
       // Generate HTML for each task
       for (const task of renderTasks) {
+        // Use persisted view if available, otherwise default center
+        const savedCoords = lesionCoords[lesionIdx] || { x: l.x, y: l.y, z: l.z };
+
         const capture = (axis, isZoomed, isFull) => {
           return renderSliceToDataURL({
             volumes: volumes,
             modality: task.modality,
             axis: axis,
-            sliceCoords: { x: l.x, y: l.y, z: l.z },
+            sliceCoords: savedCoords,
             dims: dims,
             pixDims: pixDims,
             fovZoom: isZoomed ? topZoom : null,
@@ -495,11 +498,11 @@ export default function App() {
                 <div class="axis-column">
                   <div class="axis-title">Sagittal</div>
                   <div class="img-wrapper">
-                    <div class="img-label">Zoom (Slice ${l.x})</div>
+                    <div class="img-label">Zoom (Slice ${savedCoords.x})</div>
                     <img class="zoom-img" src="${imgSagZ}" />
                   </div>
                   <div class="img-wrapper">
-                    <div class="img-label">Full (Slice ${l.x})</div>
+                    <div class="img-label">Full (Slice ${savedCoords.x})</div>
                     <img class="full-img" src="${imgSag}" />
                   </div>
                 </div>
@@ -508,11 +511,11 @@ export default function App() {
                 <div class="axis-column">
                   <div class="axis-title">Coronal</div>
                   <div class="img-wrapper">
-                    <div class="img-label">Zoom (Slice ${l.y})</div>
+                    <div class="img-label">Zoom (Slice ${savedCoords.y})</div>
                     <img class="zoom-img" src="${imgCorZ}" />
                   </div>
                   <div class="img-wrapper">
-                    <div class="img-label">Full (Slice ${l.y})</div>
+                    <div class="img-label">Full (Slice ${savedCoords.y})</div>
                     <img class="full-img" src="${imgCor}" />
                   </div>
                 </div>
@@ -521,11 +524,11 @@ export default function App() {
                 <div class="axis-column">
                   <div class="axis-title">Axial</div>
                   <div class="img-wrapper">
-                    <div class="img-label">Zoom (Slice ${l.z})</div>
+                    <div class="img-label">Zoom (Slice ${savedCoords.z})</div>
                     <img class="zoom-img" src="${imgAxZ}" />
                   </div>
                   <div class="img-wrapper">
-                    <div class="img-label">Full (Slice ${l.z})</div>
+                    <div class="img-label">Full (Slice ${savedCoords.z})</div>
                     <img class="full-img" src="${imgAx}" />
                   </div>
                 </div>
@@ -597,19 +600,22 @@ export default function App() {
       {/* Title Bar */}
       <View className="w-full bg-surface p-4 border-b border-white/10 flex-row items-center justify-between">
         <Text className="text-white text-2xl font-bold">CvsView Web</Text>
-        <TouchableOpacity
-          onPress={() => setShowLoadModal(true)}
-          className="bg-white/10 border border-white/20 px-4 py-2 rounded-lg active:bg-white/20 mr-2"
-        >
-          <Text className="text-white font-bold">📂 Load Data</Text>
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={generateReport}
-          className="bg-primary px-4 py-2 rounded-lg active:opacity-80"
-        >
-          <Text className="text-white font-bold">Generate Report</Text>
-        </TouchableOpacity>
+        <View className="flex-row gap-2">
+          <TouchableOpacity
+            onPress={() => setShowLoadModal(true)}
+            className="bg-primary px-4 py-2 rounded-lg active:opacity-80"
+          >
+            <Text className="text-white font-bold">📂 Load Data</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={generateReport}
+            className="bg-primary px-4 py-2 rounded-lg active:opacity-80"
+          >
+            <Text className="text-white font-bold">Generate Report</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <DataLoadModal
