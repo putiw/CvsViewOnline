@@ -283,7 +283,7 @@ export default function App() {
       "File Information",
       "----------------",
       `FLAIRSTAR Path: ${fileMetadata.flairStarPath || 'N/A'}`
-    ].join('\\r\\n');
+    ].join('\r\n');
 
     const textReportUri = `data:text/plain;charset=utf-8,${encodeURIComponent(textReportBody)}`;
 
@@ -293,65 +293,74 @@ export default function App() {
       <html>
       <head>
         <title>CvsView Report</title>
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #121212; color: #e0e0e0; font-size: 18px; zoom: 0.75; }
+         <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+          body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 40px; }
           
+          .container { max-width: 900px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+
           @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; max-width: none; padding: 20px; }
             .no-print { display: none !important; }
-            body { background: #fff; color: #000; zoom: 1; }
+            .lesion { break-inside: avoid; page-break-inside: avoid; }
           }
           
-          h1 { color: #60a5fa; border-bottom: 2px solid #333; padding-bottom: 20px; font-size: 32px; margin-bottom: 40px; }
-          h2 { color: #93c5fd; margin-top: 50px; font-size: 26px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+          h1 { color: #0f172a; font-size: 30px; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; letter-spacing: -0.5px; }
+          h2 { color: #334155; font-size: 20px; font-weight: 600; margin-top: 40px; margin-bottom: 15px; }
           
-          .stats { background: #f0f0f0; color: #333; padding: 20px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; margin-bottom: 20px; break-inside: avoid; }
-          .stats h2 { color: #333; font-size: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 15px; }
-          .stats p { margin: 8px 0; }
+          .stats-card { background: #f1f5f9; border-radius: 8px; padding: 24px; border: 1px solid #e2e8f0; margin-bottom: 30px; }
+          .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
+          .stat-item { display: flex; justify-content: space-between; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; }
+          .stat-label { color: #64748b; font-weight: 500; }
+          .stat-value { color: #0f172a; font-weight: 600; }
+          .file-info { font-size: 13px; color: #64748b; font-family: monospace; word-break: break-all; margin-top: 12px; background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; }
 
-          .lesion { margin-bottom: 40px; border-bottom: 4px solid #ddd; padding-bottom: 40px; break-inside: avoid; page-break-inside: avoid; }
-          .lesion-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-          .lesion-title { font-size: 24px; font-weight: bold; color: #2563eb; }
-          .lesion-meta { font-size: 14px; color: #666; }
+          .lesion { margin-bottom: 50px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; background: #fff; }
+          .lesion-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #f1f5f9; }
+          .lesion-title { font-size: 22px; font-weight: 700; color: #2563eb; }
+          .lesion-score { font-size: 18px; font-weight: 700; color: #059669; background: #d1fae5; padding: 4px 12px; rounded: 9999px; border-radius: 20px; }
+          .lesion-meta { font-size: 14px; color: #64748b; margin-top: 4px; }
 
-          /* Grid Layout for Images */
-          .image-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-          .grid-column { display: flex; flex-direction: column; gap: 10px; }
+          .image-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+          .grid-column { display: flex; flex-direction: column; gap: 8px; }
           
-          .axis-label { text-align: center; font-weight: bold; font-size: 18px; margin-bottom: 5px; color: #444; text-transform: uppercase; letter-spacing: 1px; }
+          .axis-label { text-align: center; font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
 
-          .img-card { border: 1px solid #ddd; padding: 5px; background: #fff; border-radius: 4px; text-align: center; }
-          .img-card img { width: 100%; height: auto; display: block; }
-          .img-meta { font-size: 12px; color: #777; margin-top: 4px; font-family: monospace; }
+          .img-card { border: 1px solid #e2e8f0; padding: 4px; background: #fff; border-radius: 6px; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
+          .img-card img { width: 100%; height: auto; display: block; border-radius: 2px; }
+          .img-meta { font-size: 11px; color: #94a3b8; margin-top: 4px; text-align: center; font-family: sans-serif; }
 
-          .row-title { font-size: 14px; font-weight: bold; color: #555; margin: 10px 0 5px; text-transform: uppercase; border-left: 4px solid #2563eb; padding-left: 8px; }
+          .row-title { font-size: 12px; font-weight: 700; color: #475569; margin: 16px 0 8px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+          .row-title::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
 
-          @media print {
-            body { margin: 0; padding: 20px; background: white; color: black; zoom: 1; }
-            .no-print { display: none; }
-            .stats { background: white; border: 1px solid #aaa; }
-            .lesion { break-inside: avoid; page-break-inside: avoid; border-bottom: 2px solid #000; }
-            h1 { color: black; border-bottom: 2px solid black; }
-          }
-
+          .btn { display: inline-block; padding: 10px 20px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 14px; cursor: pointer; border: none; transition: opacity 0.2s; }
+          .btn-primary { background: #2563eb; color: white; }
+          .btn-success { background: #10b981; color: white; margin-left: 10px; }
+          .btn:hover { opacity: 0.9; }
         </style>
       </head>
       <body>
-        <h1>CvsView Session Report</h1>
-        <div class="no-print" style="margin-bottom: 20px;">
-           <a href="${textReportUri}" download="cvsview_report.txt" style="display:inline-block; background: #3b82f6; color: white; padding: 10px 15px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-right: 10px;">Download Text Report</a>
-           <button onclick="window.print()" style="background: #22c55e; color: white; padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Print / Save PDF</button>
-        </div>
-        <div class="stats">
-          <h2>Session Statistics</h2>
-          <div style="display: grid; grid-template-columns: 1fr 1fr;">
-             <p><strong>Total Lesions:</strong> ${lesions.length}</p>
-             <p><strong>Total Volume:</strong> ${totalVolume.toFixed(2)} ml</p>
-             <p><strong>CVS+ Lesions:</strong> ${validLesionsCount}</p>
-             <p><strong>PRL+ Lesions:</strong> ${prlLesionsCount}</p>
-          </div>
-          <p style="margin-top: 10px; font-size: 0.9em; color: #666;"><strong>File:</strong> ${fileMetadata.flairStarPath || 'N/A'}</p>
-        </div>
-        <h2>Lesion Analysis</h2>
+        <div class="container">
+            <div class="no-print" style="margin-bottom: 30px;">
+               <a href="${textReportUri}" download="cvsview_report.txt" class="btn btn-primary">Download Text Report</a>
+               <button onclick="window.print()" class="btn btn-success">Print / Save PDF</button>
+            </div>
+
+            <h1>CvsView Session Report</h1>
+            
+            <div class="stats-card">
+              <div class="stats-grid">
+                 <div class="stat-item"><span class="stat-label">Total Lesions</span> <span class="stat-value">${lesions.length}</span></div>
+                 <div class="stat-item"><span class="stat-label">Total Volume</span> <span class="stat-value">${totalVolume.toFixed(2)} ml</span></div>
+                 <div class="stat-item"><span class="stat-label">CVS+ Lesions</span> <span class="stat-value">${validLesionsCount}</span></div>
+                 <div class="stat-item"><span class="stat-label">PRL+ Lesions</span> <span class="stat-value">${prlLesionsCount}</span></div>
+              </div>
+              <div class="file-info">File: ${fileMetadata.flairStarPath || 'N/A'}</div>
+            </div>
+
+            <h2>Lesion Analysis</h2>
     `;
 
     // ... (Loop logic remains) ...
@@ -439,12 +448,12 @@ export default function App() {
             <div class="lesion">
               <div class="lesion-header">
                 <div>
-                    <div class="lesion-title">${modTitle} Analysis</div>
-                    <div class="lesion-meta">Lesion ${lesionIdx + 1} ${contextStr}</div>
+                    <div class="lesion-title">${modTitle} Analysis <span style="font-size:16px; color:#64748b; font-weight:400;">Lesion ${lesionIdx + 1}</span></div>
+                    <div class="lesion-meta">${contextStr}</div>
                 </div>
                 <div style="text-align: right;">
-                    <div style="font-weight: bold; font-size: 18px;">CVS Score: ${((lesionScores[lesionIdx] || 0) * 100).toFixed(0)}%</div>
-                    <div class="lesion-meta">Vol: ${l.volume} vox | PRL: ${isPrl ? 'Yes' : 'No'}</div>
+                    <div class="lesion-score">CVS Score: ${((lesionScores[lesionIdx] || 0) * 100).toFixed(0)}%</div>
+                    <div class="lesion-meta" style="margin-top:8px;">Vol: ${l.volume} vox | PRL: ${isPrl ? 'Yes' : 'No'}</div>
                 </div>
               </div>
               
@@ -498,7 +507,7 @@ export default function App() {
       }
     }
 
-    reportHTML += '</body></html>';
+    reportHTML += '</div></body></html>';
 
     // Open report
     const reportWindow = window.open('', '_blank');
