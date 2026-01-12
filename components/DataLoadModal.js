@@ -6,6 +6,7 @@ import { View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native
 export default function DataLoadModal({ visible, onClose, onLoadData }) {
     if (!visible) return null;
 
+    // Selected files for loading
     const [files, setFiles] = useState({
         flairStar: null,
         lesion: null,
@@ -13,6 +14,11 @@ export default function DataLoadModal({ visible, onClose, onLoadData }) {
         flair: null,
         phase: null
     });
+
+    // Multi-subject state
+    const [scannedSubjects, setScannedSubjects] = useState({}); // { subId: { files... } }
+    const [selectedSubjectId, setSelectedSubjectId] = useState(null);
+    const [viewMode, setViewMode] = useState('initial'); // 'initial', 'subjectList', 'manual'
 
     const [loadingMsg, setLoadingMsg] = useState("");
 
@@ -41,58 +47,73 @@ export default function DataLoadModal({ visible, onClose, onLoadData }) {
 
         setLoadingMsg("Scanning folder...");
 
-        const found = {
-            flairStar: null,
-            lesion: null,
-            swi: null,
-            flair: null,
-            phase: null
-        };
-
-        // Logic to scan files based on BIDS patterns (mimicking Matlab)
-        // Patterns:
-        // FLAIRSTAR: *FLAIRSTAR.nii.gz (in derivative or anywhere?) Matlab looks in derivatives/flairStar
-        // SWI: *ses-01_swi.nii.gz
-        // Phase: *phase*.nii.gz
-        // FLAIR: *space-swi_FLAIR.nii.gz
-        // Lesion: *lesion_mask.nii.gz
-
-        // We iterate all files since webkitRelativePath gives us the structure
-
-        let foundCount = 0;
+        const subjects = {}; // Map: sub-01 -> { files: {}, count: 0 }
 
         for (let i = 0; i < fileList.length; i++) {
             const file = fileList[i];
             const name = file.name;
             const path = file.webkitRelativePath || "";
 
-            // Simple Pattern Matching (Loose to be robust)
+            // Extract Subject ID: looks for "sub-XXXX" in path
+            // Pattern: match "sub-[alphanumeric]"
+            const match = path.match(/(sub-[a-zA-Z0-9]+)/);
+            if (!match) continue; // Skip files not in a subject folder
+
+            const subId = match[1];
+
+            if (!subjects[subId]) {
+                subjects[subId] = {
+                    flairStar: null,
+                    lesion: null,
+                    swi: null,
+                    flair: null,
+                    phase: null,
+                    id: subId
+                };
+            }
+
+            const found = subjects[subId];
 
             // 1. FLAIRSTAR
             if (!found.flairStar && name.includes('FLAIRSTAR') && name.endsWith('.nii.gz')) {
-                found.flairStar = file; foundCount++;
+                found.flairStar = file;
             }
             // 2. Lesion Mask
             else if (!found.lesion && name.includes('lesion_mask') && name.endsWith('.nii.gz')) {
-                found.lesion = file; foundCount++;
+                found.lesion = file;
             }
             // 3. SWI
             else if (!found.swi && name.includes('_swi.nii.gz') && !name.includes('phase') && !name.includes('mag')) {
-                // exclude phase/mag/minIP if possible, matching *ses-01_swi.nii.gz specifically or just _swi
-                found.swi = file; foundCount++;
+                found.swi = file;
             }
             // 4. Phase
             else if (!found.phase && (name.includes('phase') || name.includes('part-phase')) && name.endsWith('.nii.gz')) {
-                found.phase = file; foundCount++;
+                found.phase = file;
             }
             // 5. FLAIR (space-swi)
             else if (!found.flair && name.includes('FLAIR') && !name.includes('FLAIRSTAR') && name.includes('space-swi') && name.endsWith('.nii.gz')) {
-                found.flair = file; foundCount++;
+                found.flair = file;
             }
         }
 
-        setFiles(found);
-        setLoadingMsg(`Scanned. Found ${foundCount} relevant files.`);
+        const subjectKeys = Object.keys(subjects).sort();
+        setScannedSubjects(subjects);
+        setLoadingMsg(`Scanned. Found ${subjectKeys.length} subjects.`);
+
+        if (subjectKeys.length > 0) {
+            setViewMode('subjectList');
+        } else {
+            alert("No BIDS subjects found in this folder. Make sure you selected the ROOT folder containing 'rawdata' and 'derivatives'.");
+            setLoadingMsg("");
+        }
+    };
+
+    const selectSubject = (subId) => {
+        const subFiles = scannedSubjects[subId];
+        setFiles(subFiles);
+        setSelectedSubjectId(subId);
+        setViewMode('manual'); // Go to file confirmation/loading view (reusing manual view)
+        setLoadingMsg(`Selected ${subId}`);
     };
 
     const handleLoadClick = async () => {
@@ -163,6 +184,40 @@ export default function DataLoadModal({ visible, onClose, onLoadData }) {
         return 'flairStar';
     };
 
+    const renderSubjectList = () => {
+        const sortedIds = Object.keys(scannedSubjects).sort();
+        return (
+            <View>
+                <View className="flex-row items-center mb-4">
+                    <TouchableOpacity onPress={() => setViewMode('initial')} className="mr-2">
+                        <Text className="text-blue-400">Back</Text>
+                    </TouchableOpacity>
+                    <Text className="text-white font-bold ml-2">Found Subjects ({sortedIds.length})</Text>
+                </View>
+
+                {sortedIds.map(subId => {
+                    const s = scannedSubjects[subId];
+                    const isReady = s.flairStar && s.lesion;
+                    return (
+                        <TouchableOpacity
+                            key={subId}
+                            onPress={() => selectSubject(subId)}
+                            className={`flex-row justify-between items-center p-3 mb-2 rounded border ${isReady ? 'bg-green-500/10 border-green-500/30 active:bg-green-500/20' : 'bg-red-500/10 border-red-500/30 opacity-80'}`}
+                        >
+                            <View>
+                                <Text className="text-white font-bold text-lg">{subId}</Text>
+                                <Text className="text-gray-400 text-xs">
+                                    {isReady ? '✅ Ready to Load' : '⚠️ Missing files (Check if visible)'}
+                                </Text>
+                            </View>
+                            <Text className="text-gray-400 text-lg">›</Text>
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+        );
+    };
+
     return (
         <View className="absolute inset-0 z-50 flex items-center justify-center bg-black/80">
             <View className="bg-[#1e1e1e] w-[600px] max-h-[90%] rounded-xl border border-white/20 shadow-2xl overflow-hidden flex-col">
@@ -177,55 +232,76 @@ export default function DataLoadModal({ visible, onClose, onLoadData }) {
 
                 <ScrollView className="p-6 flex-1">
 
-                    {/* Section 1: Auto-BIDS */}
-                    <View className="mb-8 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                        <Text className="text-blue-400 font-bold mb-2">Option A: Auto-Scan BIDS Root Folder</Text>
-                        <Text className="text-gray-300 text-sm mb-4">
-                            Select the **ROOT BIDS FOLDER** (or Subject Folder) that contains both "rawdata" and "derivatives".
-                            {"\n\n"}
-                            ⚠️ The browser cannot see outside the folder you select. If you select "derivatives/...", it won't find the "rawdata" files!
-                        </Text>
-                        <TouchableOpacity
-                            onPress={() => directoryInputRef.current.click()}
-                            className="bg-blue-600 p-3 rounded items-center active:bg-blue-700"
-                        >
-                            <Text className="text-white font-bold">Select Root Folder</Text>
-                        </TouchableOpacity>
-                        {/* Hidden Directory Input */}
-                        <input
-                            type="file"
-                            ref={directoryInputRef}
-                            style={{ display: 'none' }}
-                            webkitdirectory=""
-                            directory=""
-                            onChange={handleDirectoryScan}
-                        />
-                    </View>
+                    {viewMode === 'initial' && (
+                        <>
+                            {/* Section 1: Auto-BIDS */}
+                            <View className="mb-8 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                                <Text className="text-blue-400 font-bold mb-2">Option A: Auto-Scan BIDS Root Folder</Text>
+                                <Text className="text-gray-300 text-sm mb-4">
+                                    Select the **ROOT BIDS FOLDER** (or Subject Folder) that contains both "rawdata" and "derivatives".
+                                    {"\n\n"}
+                                    ⚠️ The browser cannot see outside the folder you select. If you select "derivatives/...", it won't find the "rawdata" files!
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={() => directoryInputRef.current.click()}
+                                    className="bg-blue-600 p-3 rounded items-center active:bg-blue-700"
+                                >
+                                    <Text className="text-white font-bold">Select Root Folder</Text>
+                                </TouchableOpacity>
+                                {/* Hidden Directory Input */}
+                                <input
+                                    type="file"
+                                    ref={directoryInputRef}
+                                    style={{ display: 'none' }}
+                                    webkitdirectory=""
+                                    directory=""
+                                    onChange={handleDirectoryScan}
+                                />
+                            </View>
 
-                    {/* Divider */}
-                    <View className="flex-row items-center mb-6">
-                        <View className="flex-1 h-[1px] bg-white/10"></View>
-                        <Text className="mx-4 text-gray-500 font-bold">OR</Text>
-                        <View className="flex-1 h-[1px] bg-white/10"></View>
-                    </View>
+                            {/* Divider */}
+                            <View className="flex-row items-center mb-6">
+                                <View className="flex-1 h-[1px] bg-white/10"></View>
+                                <Text className="mx-4 text-gray-500 font-bold">OR</Text>
+                                <View className="flex-1 h-[1px] bg-white/10"></View>
+                            </View>
 
-                    {/* Section 2: Manual Selection */}
-                    <View>
-                        <Text className="text-white font-bold mb-4">Option B: Select Files Manually</Text>
+                            {/* Section 2: Manual Selection Trigger */}
+                            <View className="items-center">
+                                <TouchableOpacity onPress={() => setViewMode('manual')}>
+                                    <Text className="text-gray-400 underline">Option B: Select Files Manually (Skip Scan)</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </>
+                    )}
 
-                        {renderStatus(files.flairStar, 'FLAIRSTAR (Required)')}
-                        {renderStatus(files.lesion, 'Lesion Mask (Required)')}
-                        {renderStatus(files.swi, 'SWI')}
-                        {renderStatus(files.flair, 'FLAIR')}
-                        {renderStatus(files.phase, 'Phase')}
+                    {viewMode === 'subjectList' && renderSubjectList()}
 
-                        {/* Hidden Inputs */}
-                        <input type="file" ref={fileInputRefs.flairStar} onChange={(e) => handleFileChange('flairStar', e)} style={{ display: 'none' }} accept=".nii,.nii.gz" />
-                        <input type="file" ref={fileInputRefs.lesion} onChange={(e) => handleFileChange('lesion', e)} style={{ display: 'none' }} accept=".nii,.nii.gz" />
-                        <input type="file" ref={fileInputRefs.swi} onChange={(e) => handleFileChange('swi', e)} style={{ display: 'none' }} accept=".nii,.nii.gz" />
-                        <input type="file" ref={fileInputRefs.flair} onChange={(e) => handleFileChange('flair', e)} style={{ display: 'none' }} accept=".nii,.nii.gz" />
-                        <input type="file" ref={fileInputRefs.phase} onChange={(e) => handleFileChange('phase', e)} style={{ display: 'none' }} accept=".nii,.nii.gz" />
-                    </View>
+                    {viewMode === 'manual' && (
+                        <View>
+                            <View className="flex-row items-center mb-4">
+                                <TouchableOpacity onPress={() => setViewMode('initial')} className="mr-2">
+                                    <Text className="text-blue-400">Back</Text>
+                                </TouchableOpacity>
+                                <Text className="text-white font-bold ml-2">
+                                    {selectedSubjectId ? `Review Files for ${selectedSubjectId}` : 'Select Files Manually'}
+                                </Text>
+                            </View>
+
+                            {renderStatus(files.flairStar, 'FLAIRSTAR (Required)')}
+                            {renderStatus(files.lesion, 'Lesion Mask (Required)')}
+                            {renderStatus(files.swi, 'SWI')}
+                            {renderStatus(files.flair, 'FLAIR')}
+                            {renderStatus(files.phase, 'Phase')}
+
+                            {/* Hidden Inputs */}
+                            <input type="file" ref={fileInputRefs.flairStar} onChange={(e) => handleFileChange('flairStar', e)} style={{ display: 'none' }} accept=".nii,.nii.gz" />
+                            <input type="file" ref={fileInputRefs.lesion} onChange={(e) => handleFileChange('lesion', e)} style={{ display: 'none' }} accept=".nii,.nii.gz" />
+                            <input type="file" ref={fileInputRefs.swi} onChange={(e) => handleFileChange('swi', e)} style={{ display: 'none' }} accept=".nii,.nii.gz" />
+                            <input type="file" ref={fileInputRefs.flair} onChange={(e) => handleFileChange('flair', e)} style={{ display: 'none' }} accept=".nii,.nii.gz" />
+                            <input type="file" ref={fileInputRefs.phase} onChange={(e) => handleFileChange('phase', e)} style={{ display: 'none' }} accept=".nii,.nii.gz" />
+                        </View>
+                    )}
 
                     {loadingMsg ? (
                         <Text className="text-yellow-400 mt-4 text-center">{loadingMsg}</Text>
@@ -238,13 +314,16 @@ export default function DataLoadModal({ visible, onClose, onLoadData }) {
                     <TouchableOpacity onPress={onClose} className="px-4 py-2 rounded bg-white/10">
                         <Text className="text-white">Cancel</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={handleLoadClick}
-                        className={`px-6 py-2 rounded ${(!files.flairStar || !files.lesion) ? 'bg-gray-600 opacity-50' : 'bg-green-600 active:bg-green-700'}`}
-                        disabled={!files.flairStar || !files.lesion}
-                    >
-                        <Text className="text-white font-bold">Load Data</Text>
-                    </TouchableOpacity>
+
+                    {viewMode === 'manual' && (
+                        <TouchableOpacity
+                            onPress={handleLoadClick}
+                            className={`px-6 py-2 rounded ${(!files.flairStar || !files.lesion) ? 'bg-gray-600 opacity-50' : 'bg-green-600 active:bg-green-700'}`}
+                            disabled={!files.flairStar || !files.lesion}
+                        >
+                            <Text className="text-white font-bold">Load Data</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </View>
         </View>
