@@ -267,21 +267,7 @@ export default function App() {
 
     // Generate Text Report Content
     const reportDate = new Date().toLocaleString();
-    const textReportBody = [
-      "CvsView Session Report",
-      "======================",
-      `Date: ${reportDate}`,
-      "",
-      "Session Statistics",
-      "------------------",
-      `Total Lesions: ${lesions.length}`,
-      `Total Vol (ml): ${totalVolume.toFixed(2)}`,
-      `CVS+ Lesions: ${validLesionsCount}`,
-      `PRL+ Lesions: ${prlLesionsCount}`,
-      "",
-      "File Information",
-      "----------------",
-      `FLAIRSTAR Path: ${fileMetadata.flairStarPath || 'N/A'}`
+
     const textReportBody = [
       "CvsView Session Report",
       "======================",
