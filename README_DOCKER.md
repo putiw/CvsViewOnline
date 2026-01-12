@@ -8,6 +8,13 @@ This project is configured for easy containerized deployment using Docker. The b
 
 ## Quick Start (Docker Compose)
 
+> **IMPORTANT**: The MRI sample data is **not** included in the git repository (it is ignored due to size). You must copy your local `assets/sample_data` directory to the server before building:
+>
+> ```bash
+> # From your LOCAL machine:
+> scp -r assets/sample_data mri@your-server-ip:~/path/to/CvsViewOnline/assets/
+> ```
+
 1.  **Build and Run**:
     ```bash
     docker-compose up -d --build
