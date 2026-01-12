@@ -9,6 +9,7 @@ import { renderSliceToDataURL } from './utils/renderer';
 import SliceViewer from './components/SliceViewer';
 import Slider from '@react-native-community/slider';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
+import DataLoadModal from './components/DataLoadModal';
 import "./global.css"
 // Mapping for sample filenames using require for Metro bundling
 const SAMPLE_FILES = {
@@ -30,6 +31,7 @@ export default function App() {
   const [modality, setModality] = useState('flairStar');
   const [lesionIndex, setLesionIndex] = useState(0);
   const [showMask, setShowMask] = useState(true);
+  const [showLoadModal, setShowLoadModal] = useState(false); // Data Load Modal
   const [lesionScores, setLesionScores] = useState({});
   const [lesionPRL, setLesionPRL] = useState({}); // Map index -> isPRL
 
@@ -234,6 +236,87 @@ export default function App() {
     }
     setVeinLikelihood(lesionScores[idx] || 0);
   };
+
+  // Callback from DataLoadModal
+  const handleDataLoad = async (buffers) => {
+    setLoading(true);
+    try {
+      // Re-use logic similar to loadData but with provided buffers
+      // Buffers: { flairStar, lesion, swi, flair, phase } (all ArrayBuffers)
+
+      const parse = (buf) => buf ? loadNifti(buf) : null;
+
+      const vFlairStar = parse(buffers.flairStar);
+      const vLesion = parse(buffers.lesion);
+      const vSwi = parse(buffers.swi);
+      const vFlair = parse(buffers.flair);
+      const vPhase = parse(buffers.phase);
+
+      if (!vFlairStar || !vLesion) throw new Error("Missing Core Files");
+
+      // Update Dims
+      setDims(vFlairStar.header.dims.slice(1, 4));
+      setPixDims(vFlairStar.header.pixDims ? vFlairStar.header.pixDims.slice(1, 4) : [1, 1, 1]);
+
+      // Process
+      const normFlairStar = zNormalize(vFlairStar.data);
+      const normSwi = vSwi ? zNormalize(vSwi.data) : null;
+      const normFlair = vFlair ? zNormalize(vFlair.data) : null;
+      const rawPhase = vPhase ? vPhase.data : null;
+
+      // Percs
+      const flairStarPerc = calculateContrastPercentiles(normFlairStar, 2.0, 99.5);
+      const swiPerc = vSwi ? calculateContrastPercentiles(normSwi, 2.0, 99.5) : { min: -1.5, max: 1.96 };
+      const flairPerc = vFlair ? calculateContrastPercentiles(normFlair, 2.0, 99.5) : { min: -1.5, max: 1.96 };
+
+      // Lesion Analysis
+      console.log("Analyzing new lesions...");
+      const analysis = findConnectedComponents(vLesion.data, vFlairStar.dims);
+      setLesions(analysis.lesions);
+
+      setVolumes({
+        flairStar: normFlairStar,
+        phase: rawPhase,
+        swi: normSwi,
+        flair: normFlair,
+        lesion: analysis.labeledMask
+      });
+
+      // Reset Persistence
+      setLesionCoords({});
+      setLesionScores({});
+      setLesionPRL({});
+
+      // Limits
+      setContrastLimits({
+        flairStar: calculateContrastPercentiles(normFlairStar, 0.01, 99.99),
+        swi: vSwi ? calculateContrastPercentiles(normSwi, 0.01, 99.99) : { min: -5, max: 10 },
+        flair: vFlair ? calculateContrastPercentiles(normFlair, 0.01, 99.99) : { min: -5, max: 10 },
+        phase: vPhase ? calculateContrastPercentiles(vPhase.data, 0.01, 99.99) : { min: -1000, max: 1000 }
+      });
+
+      setContrastSettings({
+        flairStar: flairStarPerc,
+        swi: swiPerc,
+        flair: flairPerc,
+        phase: { min: -500, max: 500 }
+      });
+
+      // Initial Coords
+      if (analysis.lesions.length > 0) {
+        setLesionIndex(0);
+        const first = analysis.lesions[0];
+        setCoords({ x: first.x, y: first.y, z: first.z });
+      }
+
+    } catch (e) {
+      console.error(e);
+      alert("Error processing loaded data: " + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const handleNextLesion = () => {
     if (lesions.length === 0) return;
@@ -475,11 +558,24 @@ export default function App() {
       <View className="flex-1 bg-background items-center justify-center p-4">
         <Text className="text-white text-3xl font-bold mb-8">CvsView Web</Text>
         <TouchableOpacity
-          onPress={loadData}
-          className="bg-primary px-8 py-4 rounded-lg active:opacity-80"
+          onPress={() => setShowLoadModal(true)}
+          className="bg-primary px-8 py-4 rounded-lg active:opacity-80 mb-4"
         >
-          <Text className="text-white text-xl font-bold">Load Sample BIDS</Text>
+          <Text className="text-white text-xl font-bold">📂 Load Data</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={loadData}
+          className="bg-white/10 px-6 py-3 rounded-lg active:bg-white/20"
+        >
+          <Text className="text-white font-bold">Load Sample BIDS (Demo)</Text>
+        </TouchableOpacity>
+
+        <DataLoadModal
+          visible={showLoadModal}
+          onClose={() => setShowLoadModal(false)}
+          onLoadData={handleDataLoad}
+        />
         <Text className="text-text-muted mt-4">Loads sub-dimah data</Text>
       </View>
     );
@@ -502,12 +598,25 @@ export default function App() {
       <View className="w-full bg-surface p-4 border-b border-white/10 flex-row items-center justify-between">
         <Text className="text-white text-2xl font-bold">CvsView Web</Text>
         <TouchableOpacity
+          onPress={() => setShowLoadModal(true)}
+          className="bg-white/10 border border-white/20 px-4 py-2 rounded-lg active:bg-white/20 mr-2"
+        >
+          <Text className="text-white font-bold">📂 Load Data</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           onPress={generateReport}
           className="bg-primary px-4 py-2 rounded-lg active:opacity-80"
         >
           <Text className="text-white font-bold">Generate Report</Text>
         </TouchableOpacity>
       </View>
+
+      <DataLoadModal
+        visible={showLoadModal}
+        onClose={() => setShowLoadModal(false)}
+        onLoadData={handleDataLoad}
+      />
 
       <View className="flex-1 flex-row">
         {/* Main Viewer Area (2x3 Grid) */}
