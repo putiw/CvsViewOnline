@@ -38,7 +38,7 @@ export default function App() {
   // Coordinates (voxel space)
   const [coords, setCoords] = useState({ x: 0, y: 0, z: 0 });
   const [lesionCoords, setLesionCoords] = useState({}); // Persistence: { index: {x,y,z} }
-  const [zoom, setZoom] = useState(1.7); // Set default zoom to level 3 (approx 1.7)
+  const [zoom, setZoom] = useState(0.5);
 
   // Contrast Settings (Per Modality)
   const [contrastSettings, setContrastSettings] = useState({
@@ -697,7 +697,7 @@ export default function App() {
                 }}
                 className="flex-1 bg-white/10 p-2 rounded items-center active:bg-white/20"
               >
-                <Text className="text-white text-xs font-bold">Reset Camera</Text>
+                <Text className="text-white text-xs font-bold">Reset</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -705,7 +705,7 @@ export default function App() {
                 className={`flex-1 p-2 rounded items-center ${showMask ? 'bg-green-500/20 border border-green-500/50' : 'bg-white/10'}`}
               >
                 <Text className={`text-xs font-bold ${showMask ? 'text-green-400' : 'text-white'}`}>
-                  {showMask ? 'Hide Mask' : 'Show Mask'}
+                  Mask
                 </Text>
               </TouchableOpacity>
             </View>
