@@ -137,19 +137,27 @@ export default function DataLoadModal({ visible, onClose, onLoadData }) {
         setLoadingMsg(`Starting load... (0/${filesToLoad.length})`);
 
         // Helper to read file as ArrayBuffer with progress update
+        // Helper to read file as ArrayBuffer with progress update
         const readFile = (file) => {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
+
+                reader.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                        const currentTotal = loadedBytes + event.loaded;
+                        const elapsed = (performance.now() - startTime) / 1000;
+                        const speed = elapsed > 0 ? (currentTotal / 1024 / 1024) / elapsed : 0;
+                        const percent = Math.min(100, Math.round((currentTotal / totalBytes) * 100));
+                        const remainingBytes = totalBytes - currentTotal;
+                        const eta = speed > 0 ? (remainingBytes / 1024 / 1024) / speed : 0;
+
+                        setProgress(percent);
+                        setLoadingMsg(`Loading ${file.name}...\n${percent}% (${speed.toFixed(1)} MB/s) - ETA: ${eta.toFixed(0)}s`);
+                    }
+                };
+
                 reader.onload = () => {
                     loadedBytes += file.size;
-                    const elapsed = (performance.now() - startTime) / 1000; // seconds
-                    const speed = (loadedBytes / 1024 / 1024) / elapsed; // MB/s
-                    const percent = Math.round((loadedBytes / totalBytes) * 100);
-                    setProgress(percent);
-                    const remainingBytes = totalBytes - loadedBytes;
-                    const eta = speed > 0 ? (remainingBytes / 1024 / 1024) / speed : 0;
-
-                    setLoadingMsg(`Loading ${file.name}...\n${percent}% (${speed.toFixed(1)} MB/s) - ETA: ${eta.toFixed(0)}s`);
                     resolve(reader.result);
                 };
                 reader.onerror = reject;
@@ -176,6 +184,8 @@ export default function DataLoadModal({ visible, onClose, onLoadData }) {
 
             setLoadingMsg("Processing volume data...");
             setProgress(100);
+            await new Promise(resolve => setTimeout(resolve, 100)); // Allow UI paint
+
             // Pass buffers back to App
             await onLoadData(buffers);
             onClose(); // Close modal on success
