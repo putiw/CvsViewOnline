@@ -38,7 +38,7 @@ export default function App() {
   // Coordinates (voxel space)
   const [coords, setCoords] = useState({ x: 0, y: 0, z: 0 });
   const [lesionCoords, setLesionCoords] = useState({}); // Persistence: { index: {x,y,z} }
-  const [zoom, setZoom] = useState(1); // Set default zoom to 1
+  const [zoom, setZoom] = useState(5.1); // Set default zoom to middle of range (0.2 - 10)
 
   // Contrast Settings (Per Modality)
   const [contrastSettings, setContrastSettings] = useState({
@@ -672,14 +672,22 @@ export default function App() {
 
             <Text className="text-text-muted mb-2">Lesion Navigation</Text>
             <View className="flex-row items-center justify-between mb-2 bg-black/20 p-2 rounded">
-              <TouchableOpacity onPress={handlePrevLesion} className="bg-white/10 p-2 rounded w-10 items-center"><Text className="text-white font-bold">{"<"}</Text></TouchableOpacity>
+              <View className="flex-row gap-1">
+                <TouchableOpacity onPress={() => jumpToLesion(0)} className="bg-white/10 p-2 rounded w-10 items-center"><Text className="text-white font-bold">{"<<"}</Text></TouchableOpacity>
+                <TouchableOpacity onPress={handlePrevLesion} className="bg-white/10 p-2 rounded w-10 items-center"><Text className="text-white font-bold">{"<"}</Text></TouchableOpacity>
+              </View>
               <Text className="text-white font-mono text-lg">
                 {(lesions.length > 0) ? (lesionIndex + 1) + " / " + lesions.length : "0 / 0"}
               </Text>
-              <TouchableOpacity onPress={handleNextLesion} className="bg-white/10 p-2 rounded w-10 items-center"><Text className="text-white font-bold">{">"}</Text></TouchableOpacity>
+              <View className="flex-row gap-1">
+                <TouchableOpacity onPress={handleNextLesion} className="bg-white/10 p-2 rounded w-10 items-center"><Text className="text-white font-bold">{">"}</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => jumpToLesion(lesions.length - 1)} className="bg-white/10 p-2 rounded w-10 items-center"><Text className="text-white font-bold">{">>"}</Text></TouchableOpacity>
+              </View>
             </View>
 
             <View className="flex-row gap-2 mb-4">
+              <TouchableOpacity onPress={() => setZoom(z => Math.max(0.2, z - 0.5))} className="bg-white/10 p-2 rounded w-10 items-center justify-center active:bg-white/20"><Text className="text-white font-bold text-lg">-</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setZoom(z => Math.min(10, z + 0.5))} className="bg-white/10 p-2 rounded w-10 items-center justify-center active:bg-white/20"><Text className="text-white font-bold text-lg">+</Text></TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
                   if (lesions[lesionIndex]) {
