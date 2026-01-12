@@ -225,8 +225,25 @@ export default function SliceViewer({
         // Interaction logic placeholder
     };
 
+    // Scroll handler (Web)
+    const handleWheel = (e) => {
+        if (!onSliceChange || maxSlice <= 1) return;
+
+        // e.deltaY > 0 means scrolling down -> next slice
+        // e.deltaY < 0 means scrolling up -> prev slice
+        const delta = Math.sign(e.deltaY);
+        const newSlice = Math.max(0, Math.min(maxSlice - 1, sliceNum + delta));
+
+        if (newSlice !== sliceNum) {
+            onSliceChange(newSlice);
+        }
+    };
+
     return (
-        <View className="flex-1 bg-black border border-white/20 relative overflow-hidden flex-col">
+        <View
+            className="flex-1 bg-black border border-white/20 relative overflow-hidden flex-col"
+            onWheel={handleWheel} // React Native Web passes this through to DOM
+        >
             <View className="flex-1 relative">
                 <Text className="absolute top-1 left-1 text-white bg-black/50 px-1 text-xs z-10">{label} (Slice {sliceNum})</Text>
                 <View className="flex-1 items-center justify-center">

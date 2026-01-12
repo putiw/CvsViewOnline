@@ -462,7 +462,7 @@ export default function App() {
             pixDims: pixDims,
             fovZoom: isZoomed ? topZoom : null,
             boxZoom: isFull ? topZoom : null,
-            showMask: showMask,
+            showMask: false,
             windowMin: task.min,
             windowMax: task.max
           });
