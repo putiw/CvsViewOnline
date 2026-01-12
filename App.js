@@ -673,21 +673,21 @@ export default function App() {
             <Text className="text-text-muted mb-2">Lesion Navigation</Text>
             <View className="flex-row items-center justify-between mb-2 bg-black/20 p-2 rounded">
               <View className="flex-row gap-1">
-                <TouchableOpacity onPress={() => jumpToLesion(0)} className="bg-white/10 p-2 rounded w-10 items-center"><Text className="text-white font-bold">{"<<"}</Text></TouchableOpacity>
-                <TouchableOpacity onPress={handlePrevLesion} className="bg-white/10 p-2 rounded w-10 items-center"><Text className="text-white font-bold">{"<"}</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => jumpToLesion(0)} className="bg-white/10 h-10 w-10 rounded items-center justify-center"><Text className="text-white font-bold">{"<<"}</Text></TouchableOpacity>
+                <TouchableOpacity onPress={handlePrevLesion} className="bg-white/10 h-10 w-10 rounded items-center justify-center"><Text className="text-white font-bold">{"<"}</Text></TouchableOpacity>
               </View>
               <Text className="text-white font-mono text-lg">
                 {(lesions.length > 0) ? (lesionIndex + 1) + " / " + lesions.length : "0 / 0"}
               </Text>
               <View className="flex-row gap-1">
-                <TouchableOpacity onPress={handleNextLesion} className="bg-white/10 p-2 rounded w-10 items-center"><Text className="text-white font-bold">{">"}</Text></TouchableOpacity>
-                <TouchableOpacity onPress={() => jumpToLesion(lesions.length - 1)} className="bg-white/10 p-2 rounded w-10 items-center"><Text className="text-white font-bold">{">>"}</Text></TouchableOpacity>
+                <TouchableOpacity onPress={handleNextLesion} className="bg-white/10 h-10 w-10 rounded items-center justify-center"><Text className="text-white font-bold">{">"}</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => jumpToLesion(lesions.length - 1)} className="bg-white/10 h-10 w-10 rounded items-center justify-center"><Text className="text-white font-bold">{">>"}</Text></TouchableOpacity>
               </View>
             </View>
 
             <View className="flex-row gap-2 mb-4">
-              <TouchableOpacity onPress={() => setZoom(z => Math.max(0.2, z - 0.5))} className="bg-white/10 p-2 rounded w-10 items-center justify-center active:bg-white/20"><Text className="text-white font-bold text-lg">-</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => setZoom(z => Math.min(10, z + 0.5))} className="bg-white/10 p-2 rounded w-10 items-center justify-center active:bg-white/20"><Text className="text-white font-bold text-lg">+</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setZoom(z => Math.max(0.2, z - 0.5))} className="bg-white/10 h-10 w-10 rounded items-center justify-center active:bg-white/20"><Text className="text-white font-bold text-lg">-</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setZoom(z => Math.min(10, z + 0.5))} className="bg-white/10 h-10 w-10 rounded items-center justify-center active:bg-white/20"><Text className="text-white font-bold text-lg">+</Text></TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
                   if (lesions[lesionIndex]) {
@@ -695,14 +695,14 @@ export default function App() {
                     handleUpdateCoords({ x: l.x, y: l.y, z: l.z });
                   }
                 }}
-                className="flex-1 bg-white/10 p-2 rounded items-center active:bg-white/20"
+                className="flex-1 bg-white/10 h-10 rounded items-center justify-center active:bg-white/20"
               >
                 <Text className="text-white text-xs font-bold">Reset</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => setShowMask(!showMask)}
-                className={`flex-1 p-2 rounded items-center ${showMask ? 'bg-green-500/20 border border-green-500/50' : 'bg-white/10'}`}
+                className={`flex-1 h-10 rounded items-center justify-center ${showMask ? 'bg-green-500/20 border border-green-500/50' : 'bg-white/10'}`}
               >
                 <Text className={`text-xs font-bold ${showMask ? 'text-green-400' : 'text-white'}`}>
                   Mask
