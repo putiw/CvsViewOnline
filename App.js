@@ -296,9 +296,9 @@ export default function App() {
          <style>
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-          body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #0f172a; color: #f1f5f9; margin: 0; padding: 40px; }
+          body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #000000; color: #e5e5e5; margin: 0; padding: 40px; }
           
-          .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5); border: 1px solid #334155; }
+          .container { max-width: 900px; margin: 0 auto; background: #121212; padding: 40px; border-radius: 12px; border: 1px solid #333; }
 
           @media print {
             body { background: white; color: black; padding: 0; }
@@ -311,32 +311,32 @@ export default function App() {
             .img-card { background: white !important; border: 1px solid #ccc !important; }
           }
           
-          h1 { color: #f8fafc; font-size: 30px; font-weight: 700; border-bottom: 2px solid #334155; padding-bottom: 20px; margin-bottom: 30px; letter-spacing: -0.5px; }
-          h2 { color: #e2e8f0; font-size: 20px; font-weight: 600; margin-top: 40px; margin-bottom: 15px; }
+          h1 { color: #ffffff; font-size: 30px; font-weight: 700; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; letter-spacing: -0.5px; }
+          h2 { color: #d4d4d4; font-size: 20px; font-weight: 600; margin-top: 40px; margin-bottom: 15px; }
           
-          .stats-card { background: #0f172a; border-radius: 8px; padding: 24px; border: 1px solid #334155; margin-bottom: 30px; }
+          .stats-card { background: #121212; border-radius: 8px; padding: 24px; border: 1px solid #333; margin-bottom: 30px; }
           .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
-          .stat-item { display: flex; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
-          .stat-label { color: #94a3b8; font-weight: 500; }
-          .stat-value { color: #f1f5f9; font-weight: 600; }
+          .stat-item { display: flex; justify-content: space-between; border-bottom: 1px solid #262626; padding-bottom: 8px; }
+          .stat-label { color: #a3a3a3; font-weight: 500; }
+          .stat-value { color: #ffffff; font-weight: 600; }
 
-          .lesion { margin-bottom: 50px; border: 1px solid #334155; border-radius: 8px; padding: 24px; background: #0f172a; }
-          .lesion-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #1e293b; }
-          .lesion-title { font-size: 22px; font-weight: 700; color: #60a5fa; }
+          .lesion { margin-bottom: 50px; border: 1px solid #333; border-radius: 8px; padding: 24px; background: #121212; }
+          .lesion-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #262626; }
+          .lesion-title { font-size: 22px; font-weight: 700; color: #3b82f6; } /* Kept blue for title accent only */
           .lesion-score { font-size: 18px; font-weight: 700; color: #4ade80; background: rgba(74, 222, 128, 0.1); padding: 4px 12px; rounded: 9999px; border-radius: 20px; }
-          .lesion-meta { font-size: 14px; color: #94a3b8; margin-top: 4px; }
+          .lesion-meta { font-size: 14px; color: #a3a3a3; margin-top: 4px; }
 
           .image-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
           .grid-column { display: flex; flex-direction: column; gap: 8px; }
           
-          .axis-label { text-align: center; font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+          .axis-label { text-align: center; font-size: 12px; font-weight: 600; color: #a3a3a3; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
 
-          .img-card { border: 1px solid #1e293b; padding: 4px; background: #000; border-radius: 6px; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.2); }
+          .img-card { border: 1px solid #333; padding: 4px; background: #000; border-radius: 6px; }
           .img-card img { width: 100%; height: auto; display: block; border-radius: 2px; }
-          .img-meta { font-size: 11px; color: #64748b; margin-top: 4px; text-align: center; font-family: sans-serif; }
+          .img-meta { font-size: 11px; color: #737373; margin-top: 4px; text-align: center; font-family: sans-serif; }
 
-          .row-title { font-size: 12px; font-weight: 700; color: #94a3b8; margin: 16px 0 8px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
-          .row-title::after { content: ''; flex: 1; height: 1px; background: #334155; }
+          .row-title { font-size: 12px; font-weight: 700; color: #a3a3a3; margin: 16px 0 8px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+          .row-title::after { content: ''; flex: 1; height: 1px; background: #333; }
 
           .btn { display: inline-block; padding: 10px 20px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 14px; cursor: pointer; border: none; transition: opacity 0.2s; }
           .btn-primary { background: #3b82f6; color: white; }
@@ -448,7 +448,7 @@ export default function App() {
             <div class="lesion">
               <div class="lesion-header">
                 <div>
-                    <div class="lesion-title">${modTitle} Analysis <span style="font-size:16px; color:#94a3b8; font-weight:400;">Lesion ${lesionIdx + 1}</span></div>
+                    <div class="lesion-title">${modTitle} Analysis <span style="font-size:16px; color:#a3a3a3; font-weight:400;">Lesion ${lesionIdx + 1}</span></div>
                     <div class="lesion-meta">${contextStr}</div>
                 </div>
                 <div style="text-align: right;">
