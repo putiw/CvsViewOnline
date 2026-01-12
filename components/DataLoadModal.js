@@ -179,15 +179,17 @@ export default function DataLoadModal({ visible, onClose, onLoadData }) {
 
                     {/* Section 1: Auto-BIDS */}
                     <View className="mb-8 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                        <Text className="text-blue-400 font-bold mb-2">Option A: Auto-Scan BIDS Folder</Text>
+                        <Text className="text-blue-400 font-bold mb-2">Option A: Auto-Scan BIDS Root Folder</Text>
                         <Text className="text-gray-300 text-sm mb-4">
-                            Select a root folder (e.g., subject folder) to automatically find all required files based on standard naming conventions.
+                            Select the **ROOT BIDS FOLDER** (or Subject Folder) that contains both "rawdata" and "derivatives".
+                            {"\n\n"}
+                            ⚠️ The browser cannot see outside the folder you select. If you select "derivatives/...", it won't find the "rawdata" files!
                         </Text>
                         <TouchableOpacity
                             onPress={() => directoryInputRef.current.click()}
                             className="bg-blue-600 p-3 rounded items-center active:bg-blue-700"
                         >
-                            <Text className="text-white font-bold">Select Folder to Scan</Text>
+                            <Text className="text-white font-bold">Select Root Folder</Text>
                         </TouchableOpacity>
                         {/* Hidden Directory Input */}
                         <input
