@@ -238,13 +238,16 @@ export default function App() {
   };
 
   // Callback from DataLoadModal
-  const handleDataLoad = async (buffers) => {
+  const handleDataLoad = async (buffers, updateStatus = () => { }) => {
     setLoading(true);
     try {
       // Re-use logic similar to loadData but with provided buffers
       // Buffers: { flairStar, lesion, swi, flair, phase } (all ArrayBuffers)
 
       const parse = (buf) => buf ? loadNifti(buf) : null;
+
+      updateStatus("Parsing NIfTI headers...");
+      await new Promise(r => setTimeout(r, 20));
 
       const vFlairStar = parse(buffers.flairStar);
       const vLesion = parse(buffers.lesion);
@@ -259,6 +262,9 @@ export default function App() {
       setPixDims(vFlairStar.header.pixDims ? vFlairStar.header.pixDims.slice(1, 4) : [1, 1, 1]);
 
       // Process
+      updateStatus("Normalizing volumes...");
+      await new Promise(r => setTimeout(r, 20));
+
       const normFlairStar = zNormalize(vFlairStar.data);
       const normSwi = vSwi ? zNormalize(vSwi.data) : null;
       const normFlair = vFlair ? zNormalize(vFlair.data) : null;
@@ -270,9 +276,15 @@ export default function App() {
       const flairPerc = vFlair ? calculateContrastPercentiles(normFlair, 2.0, 99.5) : { min: -1.5, max: 1.96 };
 
       // Lesion Analysis
+      updateStatus("Analyzing lesions (CCA)...");
+      await new Promise(r => setTimeout(r, 20));
+
       console.log("Analyzing new lesions...");
       const analysis = findConnectedComponents(vLesion.data, vFlairStar.dims);
       setLesions(analysis.lesions);
+
+      updateStatus("Finalizing...");
+      await new Promise(r => setTimeout(r, 20));
 
       setVolumes({
         flairStar: normFlairStar,

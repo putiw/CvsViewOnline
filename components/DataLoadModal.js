@@ -186,8 +186,11 @@ export default function DataLoadModal({ visible, onClose, onLoadData }) {
             setProgress(100);
             await new Promise(resolve => setTimeout(resolve, 100)); // Allow UI paint
 
-            // Pass buffers back to App
-            await onLoadData(buffers);
+            // Pass buffers back to App with status callback
+            await onLoadData(buffers, (msg) => {
+                setLoadingMsg(msg);
+                // Also force repaint via delay if needed, but App.js handles delays
+            });
             onClose(); // Close modal on success
 
         } catch (e) {
