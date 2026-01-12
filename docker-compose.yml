@@ -1,0 +1,7 @@
+version: '3'
+services:
+  cvsview-web:
+    build: .
+    ports:
+      - "8080:80"  # Map host port 8080 to container port 80
+    restart: always
