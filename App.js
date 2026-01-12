@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Platform, ScrollView } from 'react-native';
 import { Asset } from 'expo-asset';
 import { loadNifti } from './utils/niftiLoader';
 import { findConnectedComponents } from './utils/lesionAnalysis';
@@ -498,189 +498,194 @@ export default function App() {
   }
 
   return (
-    <View className="flex-1 bg-background flex-col h-screen">
-      <StatusBar style="light" />
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1, minHeight: 700 }}
+      className="bg-background"
+      showsVerticalScrollIndicator={true}
+    >
+      <View className="flex-1 flex-col">
+        <StatusBar style="light" />
 
-      {/* Title Bar */}
-      <View className="w-full bg-surface p-4 border-b border-white/10 flex-row items-center justify-between">
-        <Text className="text-white text-2xl font-bold">CvsView Web</Text>
+        {/* Title Bar */}
+        <View className="w-full bg-surface p-4 border-b border-white/10 flex-row items-center justify-between">
+          <Text className="text-white text-2xl font-bold">CvsView Web</Text>
 
-        <View className="flex-row gap-2">
-          <TouchableOpacity
-            onPress={() => setShowLoadModal(true)}
-            className="bg-primary px-4 py-2 rounded-lg active:opacity-80"
-          >
-            <Text className="text-white font-bold">Load Data</Text>
-          </TouchableOpacity>
+          <View className="flex-row gap-2">
+            <TouchableOpacity
+              onPress={() => setShowLoadModal(true)}
+              className="bg-primary px-4 py-2 rounded-lg active:opacity-80"
+            >
+              <Text className="text-white font-bold">Load Data</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={generateReport}
-            className="bg-primary px-4 py-2 rounded-lg active:opacity-80"
-          >
-            <Text className="text-white font-bold">Generate Report</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <DataLoadModal
-        visible={showLoadModal}
-        onClose={() => setShowLoadModal(false)}
-        onLoadData={handleDataLoad}
-      />
-
-      <View className="flex-1 flex-row">
-        {/* Main Viewer Area (2x3 Grid) */}
-        <View className="flex-1 flex-col p-2 gap-2">
-          {/* Top Row: Zoomed Views */}
-          <View className="flex-1 flex-row gap-2">
-            <SliceViewer label="Sagittal (Zoom)" axis="x" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id}
-              onSliceChange={(val) => handleUpdateCoords(prev => ({ ...prev, x: val }))}
-            />
-            <SliceViewer label="Coronal (Zoom)" axis="y" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id}
-              onSliceChange={(val) => handleUpdateCoords(prev => ({ ...prev, y: val }))}
-            />
-            <SliceViewer label="Axial (Zoom)" axis="z" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id}
-              onSliceChange={(val) => handleUpdateCoords(prev => ({ ...prev, z: val }))}
-            />
+            <TouchableOpacity
+              onPress={generateReport}
+              className="bg-primary px-4 py-2 rounded-lg active:opacity-80"
+            >
+              <Text className="text-white font-bold">Generate Report</Text>
+            </TouchableOpacity>
           </View>
+        </View>
 
-          {/* Bottom Row: Full Views (Less Zoom) */}
-          <View className="flex-1 flex-row gap-2">
+        <DataLoadModal
+          visible={showLoadModal}
+          onClose={() => setShowLoadModal(false)}
+          onLoadData={handleDataLoad}
+        />
+
+        <View className="flex-1 flex-row">
+          {/* Main Viewer Area (2x3 Grid) */}
+          <View className="flex-1 flex-col p-2 gap-2">
+            {/* Top Row: Zoomed Views */}
             <View className="flex-1 flex-row gap-2">
-              <SliceViewer label="Sagittal" axis="x" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={handleUpdateCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
-              <SliceViewer label="Coronal" axis="y" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={handleUpdateCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
-              <SliceViewer label="Axial" axis="z" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={handleUpdateCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
-            </View>
-          </View>
-        </View>
-
-        {/* Sidebar Controls */}
-        <View className="w-80 bg-surface p-4 border-l border-white/10 flex flex-col gap-6">
-
-          <View>
-            <Text className="text-white text-xl font-bold mb-4">Controls</Text>
-
-            <Text className="text-text-muted mb-2">Lesion Navigation</Text>
-            <View className="flex-row items-center justify-between mb-2 bg-black/20 p-2 rounded">
-              <View className="flex-row gap-1">
-                <TouchableOpacity onPress={() => jumpToLesion(0)} className="bg-white/10 h-10 w-10 rounded items-center justify-center"><Text className="text-white font-bold">{"<<"}</Text></TouchableOpacity>
-                <TouchableOpacity onPress={handlePrevLesion} className="bg-white/10 h-10 w-10 rounded items-center justify-center"><Text className="text-white font-bold">{"<"}</Text></TouchableOpacity>
-              </View>
-              <Text className="text-white font-mono text-lg">
-                {(lesions.length > 0) ? (lesionIndex + 1) + " / " + lesions.length : "0 / 0"}
-              </Text>
-              <View className="flex-row gap-1">
-                <TouchableOpacity onPress={handleNextLesion} className="bg-white/10 h-10 w-10 rounded items-center justify-center"><Text className="text-white font-bold">{">"}</Text></TouchableOpacity>
-                <TouchableOpacity onPress={() => jumpToLesion(lesions.length - 1)} className="bg-white/10 h-10 w-10 rounded items-center justify-center"><Text className="text-white font-bold">{">>"}</Text></TouchableOpacity>
-              </View>
-            </View>
-
-            <View className="flex-row gap-2 mb-4 bg-black/20 p-2 rounded">
-              <TouchableOpacity onPress={() => setZoom(z => Math.max(0.2, z - 0.5))} className="bg-white/10 h-10 w-10 rounded items-center justify-center active:bg-white/20"><Text className="text-white font-bold text-lg">-</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => setZoom(z => Math.min(10, z + 0.5))} className="bg-white/10 h-10 w-10 rounded items-center justify-center active:bg-white/20"><Text className="text-white font-bold text-lg">+</Text></TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  if (lesions[lesionIndex]) {
-                    const l = lesions[lesionIndex];
-                    handleUpdateCoords({ x: l.x, y: l.y, z: l.z });
-                  }
-                }}
-                className="flex-1 bg-white/10 h-10 rounded items-center justify-center active:bg-white/20"
-              >
-                <Text className="text-white text-xs font-bold">Reset</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setShowMask(!showMask)}
-                className={`flex-1 h-10 rounded items-center justify-center ${showMask ? 'bg-green-500/20 border border-green-500/50' : 'bg-white/10'}`}
-              >
-                <Text className={`text-xs font-bold ${showMask ? 'text-green-400' : 'text-white'}`}>
-                  Mask
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <Text className="text-xs text-text-muted">Vol: {lesions[lesionIndex]?.volume} vox</Text>
-          </View>
-
-          <View>
-            <Text className="text-text-muted mb-2">Modality</Text>
-            <View className="gap-2">
-              {['flairStar', 'swi', 'flair', 'phase'].map((m, i) => (
-                <TouchableOpacity
-                  key={m}
-                  onPress={() => setModality(m)}
-                  className={`p-3 rounded border ${modality === m ? 'bg-primary border-primary' : 'bg-transparent border-white/20'}`}
-                >
-                  <Text className="text-white font-bold uppercase">{i + 1}. {m}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View>
-            <Text className="text-text-muted mb-2">Likelihood of Vein</Text>
-            <Text className="text-white text-2xl font-bold mb-2 text-center">{(veinLikelihood * 100).toFixed(0)}%</Text>
-            <View className="h-10 bg-white/5 rounded justify-center px-2">
-              <Slider
-                style={{ width: '100%', height: 40 }}
-                minimumValue={0}
-                maximumValue={1}
-                step={0.01}
-                value={veinLikelihood}
-                onValueChange={updateScore}
-                minimumTrackTintColor="#3b82f6"
-                maximumTrackTintColor="#FFFFFF"
+              <SliceViewer label="Sagittal (Zoom)" axis="x" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id}
+                onSliceChange={(val) => handleUpdateCoords(prev => ({ ...prev, x: val }))}
+              />
+              <SliceViewer label="Coronal (Zoom)" axis="y" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id}
+                onSliceChange={(val) => handleUpdateCoords(prev => ({ ...prev, y: val }))}
+              />
+              <SliceViewer label="Axial (Zoom)" axis="z" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={topZoom} windowMin={currentMin} windowMax={currentMax} modality={modality} showMask={showMask} cursor="none" fovZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id}
+                onSliceChange={(val) => handleUpdateCoords(prev => ({ ...prev, z: val }))}
               />
             </View>
 
-            {/* PRL Checkbox */}
-            <TouchableOpacity
-              onPress={() => {
-                setLesionPRL(prev => ({ ...prev, [lesionIndex]: !prev[lesionIndex] }));
-              }}
-              className="flex-row items-center mt-3 p-2 bg-black/20 rounded"
-            >
-              <View className={`w-5 h-5 border-2 rounded mr-2 items-center justify-center ${lesionPRL[lesionIndex] ? 'bg-primary border-primary' : 'border-white/40'}`}>
-                {lesionPRL[lesionIndex] && <Text className="text-white text-xs font-bold">✓</Text>}
-              </View>
-              <Text className="text-white text-sm">PRL+ (Paramagnetic Rim)</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View>
-            <View>
-              <Text className="text-text-muted mb-2">Window Level (Min/Max)</Text>
-              <View className="items-center">
-                <MultiSlider
-                  values={[currentMin, currentMax]}
-                  onValuesChange={(vals) => {
-                    setWindowMin(vals[0]);
-                    setWindowMax(vals[1]);
-                  }}
-                  min={contrastLimits[modality]?.min ?? -5}
-                  max={contrastLimits[modality]?.max ?? 10}
-                  step={modality === 'phase' ? 1 : 0.1} // Coarser step for Phase
-                  sliderLength={220}
-                  selectedStyle={{ backgroundColor: '#3b82f6' }}
-                  unselectedStyle={{ backgroundColor: '#ffffff20' }}
-                  markerStyle={{ backgroundColor: '#ffffff', height: 20, width: 20 }}
-                />
+            {/* Bottom Row: Full Views (Less Zoom) */}
+            <View className="flex-1 flex-row gap-2">
+              <View className="flex-1 flex-row gap-2">
+                <SliceViewer label="Sagittal" axis="x" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={handleUpdateCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
+                <SliceViewer label="Coronal" axis="y" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={handleUpdateCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
+                <SliceViewer label="Axial" axis="z" volumes={volumes} dims={dims} pixDims={pixDims} coords={coords} zoom={1} windowMin={currentMin} windowMax={currentMax} modality={modality} onClick={handleUpdateCoords} interactive showMask={showMask} cursor="box" boxZoom={topZoom} currentLesionLabel={lesions[lesionIndex]?.id} />
               </View>
             </View>
           </View>
 
-          {/* Info Box */}
-          <View className="bg-black/30 p-4 rounded border border-white/10 mt-auto">
-            <Text className="text-white font-bold text-xl mb-2">Session Stats</Text>
-            <View className="gap-1">
-              <Text className="text-white text-base">Total Lesions: <Text className="font-bold text-primary">{lesions.length}</Text></Text>
-              <Text className="text-white text-base">Total Volume: <Text className="font-bold text-primary">{totalVolume.toFixed(2)} ml</Text></Text>
-              <Text className="text-white text-base">Possible CVS+: <Text className="font-bold text-primary">{validLesionsCount}</Text></Text>
-              <Text className="text-white text-base">PRL+: <Text className="font-bold text-primary">{prlLesionsCount}</Text></Text>
+          {/* Sidebar Controls */}
+          <View className="w-80 bg-surface p-4 border-l border-white/10 flex flex-col gap-6">
+
+            <View>
+              <Text className="text-white text-xl font-bold mb-4">Controls</Text>
+
+              <Text className="text-text-muted mb-2">Lesion Navigation</Text>
+              <View className="flex-row items-center justify-between mb-2 bg-black/20 p-2 rounded">
+                <View className="flex-row gap-1">
+                  <TouchableOpacity onPress={() => jumpToLesion(0)} className="bg-white/10 h-10 w-10 rounded items-center justify-center"><Text className="text-white font-bold">{"<<"}</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={handlePrevLesion} className="bg-white/10 h-10 w-10 rounded items-center justify-center"><Text className="text-white font-bold">{"<"}</Text></TouchableOpacity>
+                </View>
+                <Text className="text-white font-mono text-lg">
+                  {(lesions.length > 0) ? (lesionIndex + 1) + " / " + lesions.length : "0 / 0"}
+                </Text>
+                <View className="flex-row gap-1">
+                  <TouchableOpacity onPress={handleNextLesion} className="bg-white/10 h-10 w-10 rounded items-center justify-center"><Text className="text-white font-bold">{">"}</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => jumpToLesion(lesions.length - 1)} className="bg-white/10 h-10 w-10 rounded items-center justify-center"><Text className="text-white font-bold">{">>"}</Text></TouchableOpacity>
+                </View>
+              </View>
+
+              <View className="flex-row gap-2 mb-4 bg-black/20 p-2 rounded">
+                <TouchableOpacity onPress={() => setZoom(z => Math.max(0.2, z - 0.5))} className="bg-white/10 h-10 w-10 rounded items-center justify-center active:bg-white/20"><Text className="text-white font-bold text-lg">-</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => setZoom(z => Math.min(10, z + 0.5))} className="bg-white/10 h-10 w-10 rounded items-center justify-center active:bg-white/20"><Text className="text-white font-bold text-lg">+</Text></TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (lesions[lesionIndex]) {
+                      const l = lesions[lesionIndex];
+                      handleUpdateCoords({ x: l.x, y: l.y, z: l.z });
+                    }
+                  }}
+                  className="flex-1 bg-white/10 h-10 rounded items-center justify-center active:bg-white/20"
+                >
+                  <Text className="text-white text-xs font-bold">Reset</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setShowMask(!showMask)}
+                  className={`flex-1 h-10 rounded items-center justify-center ${showMask ? 'bg-green-500/20 border border-green-500/50' : 'bg-white/10'}`}
+                >
+                  <Text className={`text-xs font-bold ${showMask ? 'text-green-400' : 'text-white'}`}>
+                    Mask
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <Text className="text-xs text-text-muted">Vol: {lesions[lesionIndex]?.volume} vox</Text>
+            </View>
+
+            <View>
+              <Text className="text-text-muted mb-2">Modality</Text>
+              <View className="gap-2">
+                {['flairStar', 'swi', 'flair', 'phase'].map((m, i) => (
+                  <TouchableOpacity
+                    key={m}
+                    onPress={() => setModality(m)}
+                    className={`p-3 rounded border ${modality === m ? 'bg-primary border-primary' : 'bg-transparent border-white/20'}`}
+                  >
+                    <Text className="text-white font-bold uppercase">{i + 1}. {m}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View>
+              <Text className="text-text-muted mb-2">Likelihood of Vein</Text>
+              <Text className="text-white text-2xl font-bold mb-2 text-center">{(veinLikelihood * 100).toFixed(0)}%</Text>
+              <View className="h-10 bg-white/5 rounded justify-center px-2">
+                <Slider
+                  style={{ width: '100%', height: 40 }}
+                  minimumValue={0}
+                  maximumValue={1}
+                  step={0.01}
+                  value={veinLikelihood}
+                  onValueChange={updateScore}
+                  minimumTrackTintColor="#3b82f6"
+                  maximumTrackTintColor="#FFFFFF"
+                />
+              </View>
+
+              {/* PRL Checkbox */}
+              <TouchableOpacity
+                onPress={() => {
+                  setLesionPRL(prev => ({ ...prev, [lesionIndex]: !prev[lesionIndex] }));
+                }}
+                className="flex-row items-center mt-3 p-2 bg-black/20 rounded"
+              >
+                <View className={`w-5 h-5 border-2 rounded mr-2 items-center justify-center ${lesionPRL[lesionIndex] ? 'bg-primary border-primary' : 'border-white/40'}`}>
+                  {lesionPRL[lesionIndex] && <Text className="text-white text-xs font-bold">✓</Text>}
+                </View>
+                <Text className="text-white text-sm">PRL+ (Paramagnetic Rim)</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View>
+              <View>
+                <Text className="text-text-muted mb-2">Window Level (Min/Max)</Text>
+                <View className="items-center">
+                  <MultiSlider
+                    values={[currentMin, currentMax]}
+                    onValuesChange={(vals) => {
+                      setWindowMin(vals[0]);
+                      setWindowMax(vals[1]);
+                    }}
+                    min={contrastLimits[modality]?.min ?? -5}
+                    max={contrastLimits[modality]?.max ?? 10}
+                    step={modality === 'phase' ? 1 : 0.1} // Coarser step for Phase
+                    sliderLength={220}
+                    selectedStyle={{ backgroundColor: '#3b82f6' }}
+                    unselectedStyle={{ backgroundColor: '#ffffff20' }}
+                    markerStyle={{ backgroundColor: '#ffffff', height: 20, width: 20 }}
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* Info Box */}
+            <View className="bg-black/30 p-4 rounded border border-white/10 mt-auto">
+              <Text className="text-white font-bold text-xl mb-2">Session Stats</Text>
+              <View className="gap-1">
+                <Text className="text-white text-base">Total Lesions: <Text className="font-bold text-primary">{lesions.length}</Text></Text>
+                <Text className="text-white text-base">Total Volume: <Text className="font-bold text-primary">{totalVolume.toFixed(2)} ml</Text></Text>
+                <Text className="text-white text-base">Possible CVS+: <Text className="font-bold text-primary">{validLesionsCount}</Text></Text>
+                <Text className="text-white text-base">PRL+: <Text className="font-bold text-primary">{prlLesionsCount}</Text></Text>
+              </View>
             </View>
           </View>
         </View>
-      </View>
-    </View>
+    </ScrollView>
   );
 }
