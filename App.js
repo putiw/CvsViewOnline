@@ -238,15 +238,15 @@ export default function App() {
   };
 
   // Callback from DataLoadModal
-  const handleDataLoad = async (buffers, updateStatus = () => { }) => {
-    setLoading(true);
+  const handleDataLoad = async (buffers, _ignored) => {
+    setLoading("Parsing NIfTI headers...");
     try {
       // Re-use logic similar to loadData but with provided buffers
       // Buffers: { flairStar, lesion, swi, flair, phase } (all ArrayBuffers)
 
       const parse = (buf) => buf ? loadNifti(buf) : null;
 
-      updateStatus("Parsing NIfTI headers...");
+      setLoading("Parsing NIfTI headers...");
       await new Promise(r => setTimeout(r, 20));
 
       const vFlairStar = parse(buffers.flairStar);
@@ -262,7 +262,7 @@ export default function App() {
       setPixDims(vFlairStar.header.pixDims ? vFlairStar.header.pixDims.slice(1, 4) : [1, 1, 1]);
 
       // Process
-      updateStatus("Normalizing volumes...");
+      setLoading("Normalizing volumes...");
       await new Promise(r => setTimeout(r, 20));
 
       const normFlairStar = zNormalize(vFlairStar.data);
@@ -276,14 +276,14 @@ export default function App() {
       const flairPerc = vFlair ? calculateContrastPercentiles(normFlair, 2.0, 99.5) : { min: -1.5, max: 1.96 };
 
       // Lesion Analysis
-      updateStatus("Analyzing lesions (CCA)...");
+      setLoading("Analyzing lesions (CCA)...");
       await new Promise(r => setTimeout(r, 20));
 
       console.log("Analyzing new lesions...");
-      const analysis = await findConnectedComponents(vLesion.data, vFlairStar.dims, updateStatus);
+      const analysis = await findConnectedComponents(vLesion.data, vFlairStar.dims, (msg) => setLoading(msg));
       setLesions(analysis.lesions);
 
-      updateStatus("Finalizing...");
+      setLoading("Finalizing...");
       await new Promise(r => setTimeout(r, 20));
 
       setVolumes({
@@ -600,7 +600,9 @@ export default function App() {
     return (
       <View className="flex-1 bg-background items-center justify-center">
         <ActivityIndicator size="large" color="#3b82f6" />
-        <Text className="text-white mt-4">Processing MRI Data...</Text>
+        <Text className="text-white text-xl font-bold mt-4">
+          {typeof loading === 'string' ? loading : "Processing MRI Data..."}
+        </Text>
       </View>
     );
   }
