@@ -499,7 +499,7 @@ export default function App() {
 
   return (
     <ScrollView
-      contentContainerStyle={{ flexGrow: 1, minHeight: 700 }}
+      contentContainerStyle={{ flexGrow: 1, minHeight: 550 }}
       className="bg-background"
       showsVerticalScrollIndicator={true}
     >
