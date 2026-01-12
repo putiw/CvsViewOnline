@@ -685,7 +685,7 @@ export default function App() {
               </View>
             </View>
 
-            <View className="flex-row gap-2 mb-4">
+            <View className="flex-row gap-2 mb-4 bg-black/20 p-2 rounded">
               <TouchableOpacity onPress={() => setZoom(z => Math.max(0.2, z - 0.5))} className="bg-white/10 h-10 w-10 rounded items-center justify-center active:bg-white/20"><Text className="text-white font-bold text-lg">-</Text></TouchableOpacity>
               <TouchableOpacity onPress={() => setZoom(z => Math.min(10, z + 0.5))} className="bg-white/10 h-10 w-10 rounded items-center justify-center active:bg-white/20"><Text className="text-white font-bold text-lg">+</Text></TouchableOpacity>
               <TouchableOpacity
