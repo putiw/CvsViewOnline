@@ -58,6 +58,7 @@ export default function App() {
   });
 
   const [veinLikelihood, setVeinLikelihood] = useState(0);
+  const [fileMetadata, setFileMetadata] = useState({});
 
   // Helper to get current contrast
   const currentMin = contrastSettings[modality]?.min ?? -1.5;
@@ -133,7 +134,14 @@ export default function App() {
   };
 
   // Callback from DataLoadModal
-  const handleDataLoad = async (buffers, _ignored) => {
+  const handleDataLoad = async (buffers, metadata, statusCb) => {
+    // Handle optional metadata/callback args
+    let cb = statusCb;
+    if (typeof metadata === 'function') {
+      cb = metadata;
+      metadata = {};
+    }
+    setFileMetadata(metadata || {});
     setLoading("Parsing NIfTI headers...");
     try {
       // Re-use logic similar to loadData but with provided buffers
@@ -257,6 +265,27 @@ export default function App() {
     // Get CVS+ lesions
     const cvsLesions = lesions.filter((_, idx) => lesionScores[idx] >= 0.5);
 
+    // Generate Text Report Content
+    const reportDate = new Date().toLocaleString();
+    const textReportBody = [
+      "CvsView Session Report",
+      "======================",
+      `Date: ${reportDate}`,
+      "",
+      "Session Statistics",
+      "------------------",
+      `Total Lesions: ${lesions.length}`,
+      `Total Vol (ml): ${totalVolume.toFixed(2)}`,
+      `CVS+ Lesions: ${validLesionsCount}`,
+      `PRL+ Lesions: ${prlLesionsCount}`,
+      "",
+      "File Information",
+      "----------------",
+      `FLAIRSTAR Path: ${fileMetadata.flairStarPath || 'N/A'}`
+    ].join('\\n');
+
+    const textReportUri = `data:text/plain;charset=utf-8,${encodeURIComponent(textReportBody)}`;
+
     // Create report HTML
     let reportHTML = `
       <!DOCTYPE html>
@@ -300,6 +329,10 @@ export default function App() {
       </head>
       <body>
         <h1>CvsView Session Report</h1>
+        <div class="no-print" style="margin-bottom: 20px;">
+           <a href="${textReportUri}" download="cvsview_report.txt" style="display:inline-block; background: #3b82f6; color: white; padding: 10px 15px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-right: 10px;">Download Text Report</a>
+           <button onclick="window.print()" style="background: #22c55e; color: white; padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Print / Save PDF</button>
+        </div>
         <div class="stats">
           <h2>Session Statistics</h2>
           <p><strong>Total Lesions:</strong> <span style="color: #60a5fa">${lesions.length}</span></p>
