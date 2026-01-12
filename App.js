@@ -282,7 +282,22 @@ export default function App() {
       "File Information",
       "----------------",
       `FLAIRSTAR Path: ${fileMetadata.flairStarPath || 'N/A'}`
-    ].join('\\n');
+    const textReportBody = [
+      "CvsView Session Report",
+      "======================",
+      `Date: ${reportDate}`,
+      "",
+      "Session Statistics",
+      "------------------",
+      `Total Lesions: ${lesions.length}`,
+      `Total Vol (ml): ${totalVolume.toFixed(2)}`,
+      `CVS+ Lesions: ${validLesionsCount}`,
+      `PRL+ Lesions: ${prlLesionsCount}`,
+      "",
+      "File Information",
+      "----------------",
+      `FLAIRSTAR Path: ${fileMetadata.flairStarPath || 'N/A'}`
+    ].join('\\r\\n');
 
     const textReportUri = `data:text/plain;charset=utf-8,${encodeURIComponent(textReportBody)}`;
 
@@ -303,27 +318,34 @@ export default function App() {
           h1 { color: #60a5fa; border-bottom: 2px solid #333; padding-bottom: 20px; font-size: 32px; margin-bottom: 40px; }
           h2 { color: #93c5fd; margin-top: 50px; font-size: 26px; border-bottom: 1px solid #333; padding-bottom: 10px; }
           
-          .stats { background: #1e1e1e; padding: 30px; border-radius: 12px; border: 1px solid #333; font-size: 24px; margin-bottom: 40px; }
-          .stats p { margin: 15px 0; line-height: 1.4; }
-          .stats h2 { margin-top: 0; font-size: 32px; border-bottom: 1px solid #444; padding-bottom: 15px; margin-bottom: 20px; color: #fff; }
+          .stats { background: #f0f0f0; color: #333; padding: 20px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; margin-bottom: 20px; break-inside: avoid; }
+          .stats h2 { color: #333; font-size: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 15px; }
+          .stats p { margin: 8px 0; }
 
-          .axis-container { display: flex; justify-content: center; gap: 15px; margin-bottom: 40px; }
-          .axis-column { display: flex; flex-direction: column; gap: 20px; align-items: center; flex: 1; max-width: 400px; }
-          .axis-title { font-size: 22px; color: #93c5fd; font-weight: bold; margin-bottom: 10px; text-align: center; }
+          .lesion { margin-bottom: 40px; border-bottom: 4px solid #ddd; padding-bottom: 40px; break-inside: avoid; page-break-inside: avoid; }
+          .lesion-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+          .lesion-title { font-size: 24px; font-weight: bold; color: #2563eb; }
+          .lesion-meta { font-size: 14px; color: #666; }
+
+          /* Grid Layout for Images */
+          .image-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+          .grid-column { display: flex; flex-direction: column; gap: 10px; }
           
-          .img-wrapper { width: 100%; display: flex; flex-direction: column; align-items: center; background: #000; border: 1px solid #333; padding: 10px; border-radius: 8px; }
-          .img-label { color: #aaa; margin-bottom: 8px; font-size: 16px; font-family: monospace; }
-          
-          img { display: block; max-width: 100%; object-fit: contain; background: #000; }
-          .zoom-img { height: 250px; width: 250px; }
-          .full-img { height: 500px; width: auto; }
-          
-          .lesion { margin-bottom: 60px; background: #000; padding: 30px; border-radius: 16px; border: 1px solid #333; page-break-inside: avoid; }
-          .lesion-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 25px; }
-          .lesion-title { font-size: 1.6em; font-weight: bold; color: #60a5fa; }
-          .lesion-title.cvs { color: #4ade80; }
-          .lesion-title.prl { color: #60a5fa; }
-          .lesion-meta { color: #aaa; font-size: 1.2em; }
+          .axis-label { text-align: center; font-weight: bold; font-size: 18px; margin-bottom: 5px; color: #444; text-transform: uppercase; letter-spacing: 1px; }
+
+          .img-card { border: 1px solid #ddd; padding: 5px; background: #fff; border-radius: 4px; text-align: center; }
+          .img-card img { width: 100%; height: auto; display: block; }
+          .img-meta { font-size: 12px; color: #777; margin-top: 4px; font-family: monospace; }
+
+          .row-title { font-size: 14px; font-weight: bold; color: #555; margin: 10px 0 5px; text-transform: uppercase; border-left: 4px solid #2563eb; padding-left: 8px; }
+
+          @media print {
+            body { margin: 0; padding: 20px; background: white; color: black; zoom: 1; }
+            .no-print { display: none; }
+            .stats { background: white; border: 1px solid #aaa; }
+            .lesion { break-inside: avoid; page-break-inside: avoid; border-bottom: 2px solid #000; }
+            h1 { color: black; border-bottom: 2px solid black; }
+          }
 
         </style>
       </head>
@@ -335,12 +357,15 @@ export default function App() {
         </div>
         <div class="stats">
           <h2>Session Statistics</h2>
-          <p><strong>Total Lesions:</strong> <span style="color: #60a5fa">${lesions.length}</span></p>
-          <p><strong>Total Volume:</strong> <span style="color: #60a5fa">${totalVolume.toFixed(2)} ml</span></p>
-          <p><strong>CVS+ Lesions:</strong> <span style="color: #60a5fa">${validLesionsCount}</span></p>
-          <p><strong>PRL+ Lesions:</strong> <span style="color: #60a5fa">${prlLesionsCount}</span></p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr;">
+             <p><strong>Total Lesions:</strong> ${lesions.length}</p>
+             <p><strong>Total Volume:</strong> ${totalVolume.toFixed(2)} ml</p>
+             <p><strong>CVS+ Lesions:</strong> ${validLesionsCount}</p>
+             <p><strong>PRL+ Lesions:</strong> ${prlLesionsCount}</p>
+          </div>
+          <p style="margin-top: 10px; font-size: 0.9em; color: #666;"><strong>File:</strong> ${fileMetadata.flairStarPath || 'N/A'}</p>
         </div>
-        <h2>Lesion Details</h2>
+        <h2>Lesion Analysis</h2>
     `;
 
     // ... (Loop logic remains) ...
@@ -427,53 +452,61 @@ export default function App() {
         reportHTML += `
             <div class="lesion">
               <div class="lesion-header">
-                <div class="lesion-title ${titleClass}">Lesion ${lesionIdx + 1}: ${modTitle} ${contextStr}</div>
-                <div class="lesion-meta">
-                    Vol: ${l.volume} vox | CVS Score: ${((lesionScores[lesionIdx] || 0) * 100).toFixed(0)}% | PRL: ${isPrl ? 'Yes' : 'No'}
+                <div>
+                    <div class="lesion-title">${modTitle} Analysis</div>
+                    <div class="lesion-meta">Lesion ${lesionIdx + 1} ${contextStr}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-weight: bold; font-size: 18px;">CVS Score: ${((lesionScores[lesionIdx] || 0) * 100).toFixed(0)}%</div>
+                    <div class="lesion-meta">Vol: ${l.volume} vox | PRL: ${isPrl ? 'Yes' : 'No'}</div>
                 </div>
               </div>
               
-              <div class="axis-container">
-                <!-- Sagittal Column -->
-                <div class="axis-column">
-                  <div class="axis-title">Sagittal</div>
-                  <div class="img-wrapper">
-                    <div class="img-label">Zoom (Slice ${savedCoords.x})</div>
-                    <img class="zoom-img" src="${imgSagZ}" />
-                  </div>
-                  <div class="img-wrapper">
-                    <div class="img-label">Full (Slice ${savedCoords.x})</div>
-                    <img class="full-img" src="${imgSag}" />
-                  </div>
+              <!-- Row 1: Zoomed View -->
+              <div class="row-title">Zoomed View (Slice Focus)</div>
+              <div class="image-grid">
+                <div class="grid-column">
+                    <div class="axis-label">Sagittal</div>
+                    <div class="img-card">
+                        <img src="${imgSagZ}" />
+                        <div class="img-meta">Slice ${savedCoords.x}</div>
+                    </div>
                 </div>
-
-                <!-- Coronal Column -->
-                <div class="axis-column">
-                  <div class="axis-title">Coronal</div>
-                  <div class="img-wrapper">
-                    <div class="img-label">Zoom (Slice ${savedCoords.y})</div>
-                    <img class="zoom-img" src="${imgCorZ}" />
-                  </div>
-                  <div class="img-wrapper">
-                    <div class="img-label">Full (Slice ${savedCoords.y})</div>
-                    <img class="full-img" src="${imgCor}" />
-                  </div>
+                <div class="grid-column">
+                    <div class="axis-label">Coronal</div>
+                    <div class="img-card">
+                        <img src="${imgCorZ}" />
+                        <div class="img-meta">Slice ${savedCoords.y}</div>
+                    </div>
                 </div>
-
-                <!-- Axial Column -->
-                <div class="axis-column">
-                  <div class="axis-title">Axial</div>
-                  <div class="img-wrapper">
-                    <div class="img-label">Zoom (Slice ${savedCoords.z})</div>
-                    <img class="zoom-img" src="${imgAxZ}" />
-                  </div>
-                  <div class="img-wrapper">
-                    <div class="img-label">Full (Slice ${savedCoords.z})</div>
-                    <img class="full-img" src="${imgAx}" />
-                  </div>
+                <div class="grid-column">
+                    <div class="axis-label">Axial</div>
+                    <div class="img-card">
+                        <img src="${imgAxZ}" />
+                        <div class="img-meta">Slice ${savedCoords.z}</div>
+                    </div>
                 </div>
               </div>
-              
+
+              <!-- Row 2: Full Context -->
+              <div class="row-title">Full Context</div>
+              <div class="image-grid">
+                <div class="grid-column">
+                    <div class="img-card">
+                        <img src="${imgSag}" />
+                    </div>
+                </div>
+                <div class="grid-column">
+                    <div class="img-card">
+                        <img src="${imgCor}" />
+                    </div>
+                </div>
+                <div class="grid-column">
+                    <div class="img-card">
+                        <img src="${imgAx}" />
+                    </div>
+                </div>
+              </div>
             </div>
           `;
       }
